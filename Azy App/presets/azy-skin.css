@@ -1,0 +1,616 @@
+/* =========================================================================
+   AZY — "Spider glow" skin (v1.13)
+   The look of the user's reference boards: lit accent frames, a dense spun web around the
+   window edges, a round spider badge, separate glowing sector buttons, double-framed cards
+   with a fine web texture, and see-through glass for the Dagger / Speed pop-ups.
+
+   Rules
+   • Pure presentation. No layout logic changes, no new DOM besides what already exists.
+   • Tokens only: every colour is the accent (--hue / --hue-rgb) or a depth/text token, so all
+     accents work and "Per panel" still recolours per section.
+   • Everything glowing is multiplied by --azy-glow-k (Full 1 · Balanced 0.55 · Performance 0),
+     web texture by --azy-deco-k — Performance mode is automatically calm and cheap.
+   • Only active under html[data-skin="glow"] (Settings → Appearance → Style). "Clean" = v1.12.
+   • Loaded last in every window.
+   ========================================================================= */
+
+html[data-skin="glow"] {
+  --azy-web-a-frame: 0.34;           /* frame web opacity (baked by azy-web.js) */
+  --azy-web-glow: 1;                 /* bake a soft blur pass under the frame web */
+  --sk-k: var(--azy-glow-k, 1);
+  --sk-ink: color-mix(in srgb, var(--hue, #d6283f) 58%, var(--azy-text-1, #f1f1f1));   /* lit text / icons */
+  --sk-edge-faint: rgba(var(--hue-rgb), 0.26);
+  --sk-edge-soft: rgba(var(--hue-rgb), 0.46);
+  --sk-edge: rgba(var(--hue-rgb), 0.58);
+  --sk-edge-hi: rgba(var(--hue-rgb), 0.95);
+  --sk-fill: color-mix(in srgb, color-mix(in srgb, rgb(var(--hue-rgb)) 6%, var(--azy-depth-0, #040404)) clamp(20%, calc(100% - 20% * var(--azy-glass-k, 1)), 100%), transparent);   /* accent-tinted depth */
+  --sk-fill-2: color-mix(in srgb, color-mix(in srgb, rgb(var(--hue-rgb)) 7%, var(--azy-depth-1, #080808)) clamp(30%, calc(100% - 12% * var(--azy-glass-k, 1)), 100%), transparent);
+  --sk-lit: linear-gradient(180deg, rgba(var(--hue-rgb), 0.34), rgba(var(--hue-rgb), 0.12) 60%, rgba(var(--hue-rgb), 0.2));
+  --sk-lit-soft: linear-gradient(180deg, rgba(var(--hue-rgb), 0.16), rgba(var(--hue-rgb), 0.04));
+  /* v1.19: smoother falloff — soft core + wide faint halo; the hard 3px/0.8 ring is gone */
+  --sk-glow: 0 0 calc(6px * var(--sk-k)) calc(-1px * var(--sk-k)) rgba(var(--hue-rgb), calc(0.32 * var(--sk-k))), 0 0 calc(16px * var(--sk-k)) calc(-4px * var(--sk-k)) rgba(var(--hue-rgb), calc(0.22 * var(--sk-k)));
+  --sk-glow-hi: 0 0 calc(9px * var(--sk-k)) calc(-1px * var(--sk-k)) rgba(var(--hue-rgb), calc(0.48 * var(--sk-k))), 0 0 calc(24px * var(--sk-k)) calc(-4px * var(--sk-k)) rgba(var(--hue-rgb), calc(0.32 * var(--sk-k)));
+  --sk-inner: inset 0 0 calc(16px * var(--sk-k)) rgba(var(--hue-rgb), calc(0.14 * var(--sk-k)));
+  --sk-inner-hi: inset 0 0 calc(20px * var(--sk-k)) rgba(var(--hue-rgb), calc(0.3 * var(--sk-k)));
+  --sk-text-glow: 0 0 calc(10px * var(--sk-k)) rgba(var(--hue-rgb), calc(0.6 * var(--sk-k)));
+  --azy-wave-rest: rgba(var(--hue-rgb), 0.62);
+  --azy-wave-on: color-mix(in srgb, var(--hue, #d6283f) 45%, var(--azy-text-1, #f1f1f1));
+  --sk-r: calc(12px * var(--azy-round, 1));
+  --sk-r-sm: calc(9px * var(--azy-round, 1));
+  --sk-dur: var(--azy-dur-1, 120ms);
+}
+html[data-skin="glow"][data-perf="balanced"] { --azy-web-a-frame: 0.24; --azy-web-glow: 0; }
+html[data-skin="glow"][data-perf="performance"] { --azy-web-a-frame: 0; --azy-web-glow: 0; }
+html[data-skin="glow"][data-webs="off"] { --azy-web-a-frame: 0; }
+
+/* ---- the spider mark, bolder: filled body with the Azy "A" cut in, thicker legs ---------- */
+html[data-skin="glow"] .azy-sigil-leg { stroke-width: 2.3; }
+html[data-skin="glow"] .azy-sigil-head,
+html[data-skin="glow"] .azy-sigil-abdomen { fill: currentColor; stroke-width: 1.4; }
+html[data-skin="glow"] .azy-sigil-a { stroke: var(--azy-depth-0, #040404); stroke-width: 1.6; }
+html[data-skin="glow"] .azy-sigil-core { fill: var(--azy-depth-0, #040404); }
+html[data-skin="glow"] .azy-sigil-web { opacity: 0.35; }
+html[data-skin="glow"] .azy-sigil-web--inner { opacity: 0; }
+html[data-skin="glow"] .azy-sigil { filter: drop-shadow(0 0 calc(4px * var(--sk-k)) rgba(var(--hue-rgb), calc(0.75 * var(--sk-k)))); }
+
+/* =========================================================================
+   1. WINDOW FRAME + BACKGROUND WEB
+   ========================================================================= */
+html[data-skin="glow"] .minimal-ui #app {
+  border: 1px solid var(--sk-edge);
+  /* No border-radius here: the OS already rounds the frameless window (roundedCorners), and a
+     rounded #app turns into a clip that stops Chromium squashing the content into one layer —
+     every pane then becomes its own layer and re-rasters whole on each toast / toggle
+     (measured: 15–25 long frames per ui-stress run → 0–2 without it). */
+  box-shadow: inset 0 0 0 1px rgba(var(--hue-rgb), calc(0.12 + 0.1 * var(--sk-k)));
+  /* One flat tint only — everything decorative is on <body> (below). #app is the big content
+     layer; anything painted here is re-rastered with every hover / toast / toggle. */
+  background: color-mix(in srgb, var(--azy-depth-0, #040404) 30%, transparent);
+}
+/* Frame decoration — web (pre-rendered bitmap, azy-web.js bitmap()), edge glow, light pools —
+   is painted by <body>, i.e. the root layer, which content changes never invalidate. */
+html[data-skin="glow"] body.minimal-ui {
+  background:
+    var(--azy-web-bg-frame, none) center / 100% 100% no-repeat,
+    linear-gradient(90deg, rgba(var(--hue-rgb), calc(0.14 * var(--sk-k))), transparent 24px, transparent calc(100% - 24px), rgba(var(--hue-rgb), calc(0.14 * var(--sk-k)))),
+    linear-gradient(180deg, rgba(var(--hue-rgb), calc(0.12 * var(--sk-k))), transparent 24px, transparent calc(100% - 24px), rgba(var(--hue-rgb), calc(0.12 * var(--sk-k)))),
+    radial-gradient(ellipse at 50% -10%, rgba(var(--hue-rgb), calc(0.1 * var(--sk-k))), transparent 55%),
+    radial-gradient(ellipse at 50% 110%, rgba(var(--hue-rgb), calc(0.08 * var(--sk-k))), transparent 50%),
+    linear-gradient(180deg, var(--azy-depth-1, #080808), var(--azy-depth-0, #040404));
+  background-color: var(--azy-depth-0, #040404);
+}
+
+/* Living web (full motion, not Performance): the same pre-rendered web bitmap moves to its own
+   fixed layer BEHIND the app and slowly drifts / breathes; a second, slightly larger copy
+   shimmers on a different beat, so the threads seem to catch the light. Transform + opacity
+   only — the compositor moves two bitmaps, nothing re-rasters. Balanced keeps the drift only;
+   Performance and Reduced motion keep the web static on <body> exactly as before. */
+html[data-skin="glow"][data-motion="full"]:not([data-perf="performance"]) body.minimal-ui {
+  background:
+    linear-gradient(90deg, rgba(var(--hue-rgb), calc(0.14 * var(--sk-k))), transparent 24px, transparent calc(100% - 24px), rgba(var(--hue-rgb), calc(0.14 * var(--sk-k)))),
+    linear-gradient(180deg, rgba(var(--hue-rgb), calc(0.12 * var(--sk-k))), transparent 24px, transparent calc(100% - 24px), rgba(var(--hue-rgb), calc(0.12 * var(--sk-k)))),
+    radial-gradient(ellipse at 50% -10%, rgba(var(--hue-rgb), calc(0.1 * var(--sk-k))), transparent 55%),
+    radial-gradient(ellipse at 50% 110%, rgba(var(--hue-rgb), calc(0.08 * var(--sk-k))), transparent 50%),
+    linear-gradient(180deg, var(--azy-depth-1, #080808), var(--azy-depth-0, #040404));
+  background-color: var(--azy-depth-0, #040404);
+}
+html[data-skin="glow"][data-motion="full"]:not([data-perf="performance"]) body.minimal-ui::before,
+html[data-skin="glow"][data-motion="full"][data-perf="full"] body.minimal-ui::after {
+  content: ''; position: fixed; inset: -2%; z-index: -1; pointer-events: none;
+  background: var(--azy-web-bg-frame, none) center / 100% 100% no-repeat;
+}
+html[data-skin="glow"][data-motion="full"]:not([data-perf="performance"]) body.minimal-ui::before { animation: azyWebDrift calc(18s * var(--azy-speed-k, 1)) ease-in-out infinite alternate; }
+html[data-skin="glow"][data-motion="full"][data-perf="full"] body.minimal-ui::after { opacity: 0; animation: azyWebShimmer calc(11s * var(--azy-speed-k, 1)) ease-in-out infinite; }
+html[data-skin="glow"] .minimal-ui .azy-art-corner { display: none; }   /* the frame web replaces it */
+html[data-skin="glow"] .minimal-ui #app :is(.app-chrome, .statusbar) { background: transparent; }
+
+/* =========================================================================
+   2. HEADER — spider badge · AZY · sector crumb · keycaps · lit window buttons
+   ========================================================================= */
+html[data-skin="glow"] .minimal-ui #app .app-chrome { min-height: 40px; padding-block: 4px 2px; border-bottom: 0; }
+html[data-skin="glow"] .minimal-ui #app .app-chrome::after { opacity: 0.5; }
+html[data-skin="glow"] .minimal-ui #app .brand-lockup { gap: 10px; }
+html[data-skin="glow"] .minimal-ui #app .brand-mark {
+  width: 32px; height: 32px; border-radius: 50%;
+  display: inline-grid; place-items: center; color: var(--hue);
+  border: 1px solid var(--sk-edge);
+  background: radial-gradient(circle at 50% 40%, rgba(var(--hue-rgb), 0.2), var(--azy-depth-0, #040404) 72%);
+  box-shadow: var(--sk-glow), var(--sk-inner);
+}
+html[data-skin="glow"] .minimal-ui #app .brand-mark .azy-sigil { width: 26px; height: 26px; }
+html[data-skin="glow"] .minimal-ui #app .brand-word {
+  font-size: 15px; font-weight: 700; letter-spacing: 0.34em; color: var(--azy-text-1);
+  text-transform: uppercase; text-shadow: 0 0 calc(8px * var(--sk-k)) rgba(var(--hue-rgb), calc(0.35 * var(--sk-k)));
+}
+html[data-skin="glow"] .minimal-ui #app .workspace-title { color: var(--azy-text-1); font-weight: 650; }
+html[data-skin="glow"] .minimal-ui #app .workspace-sep { background: var(--hue); box-shadow: var(--sk-glow); }
+html[data-skin="glow"] .minimal-ui #app .workspace-shortcut { opacity: 1; gap: 5px; }
+html[data-skin="glow"] .minimal-ui #app .workspace-shortcut kbd {
+  min-width: 26px; height: 24px; padding: 0 7px; display: inline-grid; place-items: center;
+  border-radius: 8px; border: 1px solid var(--sk-edge-soft); background: var(--sk-fill);
+  color: var(--sk-ink); font-size: 11px; box-shadow: var(--sk-inner);
+}
+html[data-skin="glow"] .minimal-ui #app .chrome-conn { border-color: var(--sk-edge-soft); background: var(--sk-fill); border-radius: 99px; }
+html[data-skin="glow"] .minimal-ui #app .win-btns { gap: 6px; }
+html[data-skin="glow"] .minimal-ui #app .win-btn {
+  width: 32px; height: 26px; border-radius: 8px;
+  border: 1px solid var(--sk-edge); background: var(--sk-fill); color: var(--azy-text-1);
+  box-shadow: var(--sk-inner);
+  transition: box-shadow var(--sk-dur) var(--azy-ease), border-color var(--sk-dur) var(--azy-ease), background-color var(--sk-dur) var(--azy-ease);
+}
+html[data-skin="glow"] .minimal-ui #app .win-btn:hover { border-color: var(--sk-edge-hi); background: rgba(var(--hue-rgb), 0.14); box-shadow: var(--sk-glow), var(--sk-inner-hi); }
+html[data-skin="glow"] .minimal-ui #app #winCloseBtn:hover { border-color: var(--azy-err); background: var(--azy-err-muted); }
+
+/* =========================================================================
+   3. SECTOR BUTTONS — separate lit tiles, the gliding pill becomes the filled active tile
+   ========================================================================= */
+html[data-skin="glow"] .minimal-ui #app .mode-row {
+  gap: 6px; margin: 4px 10px 8px; padding: 0;
+  background: transparent; border: 0; box-shadow: none;
+}
+html[data-skin="glow"] .minimal-ui #app .mode-tab {
+  min-height: 36px; gap: 8px; border-radius: 10px;
+  border: 1px solid var(--sk-edge-soft);
+  background: var(--azy-web-bg-tex, none) center / 100% 100% no-repeat, var(--sk-fill);
+  color: var(--azy-text-1); font-weight: 550;
+  box-shadow: var(--sk-inner);
+  transition: color var(--sk-dur) var(--azy-ease), border-color var(--sk-dur) var(--azy-ease), box-shadow var(--sk-dur) var(--azy-ease), transform var(--sk-dur) var(--azy-ease);
+}
+html[data-skin="glow"] .minimal-ui #app .mode-tab svg { width: 16px; height: 16px; opacity: 1; color: var(--sk-ink); }
+html[data-skin="glow"] .minimal-ui #app .mode-tab:hover:not(.active) { background: var(--azy-web-bg-tex, none) center / 100% 100% no-repeat, rgba(var(--hue-rgb), 0.08); border-color: var(--sk-edge); box-shadow: var(--sk-glow), var(--sk-inner); color: var(--azy-text-1); }
+html[data-skin="glow"] .minimal-ui #app .mode-tab:hover:not(.active) svg { color: var(--hue); }
+html[data-skin="glow"] .minimal-ui #app .mode-tab.active { border-color: transparent; color: var(--azy-text-1); text-shadow: var(--sk-text-glow); }
+html[data-skin="glow"] .minimal-ui #app .mode-tab.active svg { color: var(--azy-text-1); filter: drop-shadow(0 0 calc(4px * var(--sk-k)) rgba(var(--hue-rgb), var(--sk-k))); }
+html[data-skin="glow"] .minimal-ui #app .mode-sep { display: none; }
+html[data-skin="glow"] .minimal-ui #app .mode-kbd { border-color: var(--sk-edge-faint); color: var(--sk-ink); opacity: 0.7; }
+html[data-skin="glow"] .minimal-ui #app .mode-pill {
+  top: 0; bottom: 0; left: 0; border-radius: 10px;
+  background-color: rgba(var(--hue-rgb), 0.22);
+  background-image: var(--sk-lit);
+  border: 1px solid var(--sk-edge-hi);
+  box-shadow: var(--sk-glow-hi), var(--sk-inner-hi);
+}
+/* angled "blade" corners on the active tile (the reference's cut edges), drawn — not clipped,
+   so the glow survives */
+html[data-skin="glow"] .minimal-ui #app .mode-pill::before {
+  left: -1px; right: -1px; top: -1px; bottom: -1px; height: auto;
+  border-radius: inherit;
+  background:
+    linear-gradient(135deg, var(--sk-edge-hi) 0 7px, transparent 7px) left top / 12px 12px no-repeat,
+    linear-gradient(225deg, var(--sk-edge-hi) 0 7px, transparent 7px) right top / 12px 12px no-repeat,
+    linear-gradient(45deg, var(--sk-edge-hi) 0 7px, transparent 7px) left bottom / 12px 12px no-repeat,
+    linear-gradient(315deg, var(--sk-edge-hi) 0 7px, transparent 7px) right bottom / 12px 12px no-repeat;
+  opacity: 0.85;
+}
+html[data-skin="glow"] .minimal-ui #app .mode-pill::after { left: 18%; right: 18%; bottom: -1px; height: 2px; border-radius: 2px; background: var(--azy-text-1); opacity: 0.8; }
+
+/* =========================================================================
+   4. CONTROLS — icon buttons, actions, segmented, chips, search, source rack
+   ========================================================================= */
+html[data-skin="glow"] .minimal-ui #app :is(.icon-btn, .hero-action, .file-view-btn, .text-action, .file-filter-btn, .chip, .flow-move-btn, .file-sort-control select, .pin-chip, .pins-strip > button, .preset-connection-pill) {
+  border: 1px solid var(--sk-edge-soft); background-color: var(--sk-fill); color: var(--sk-ink);
+  box-shadow: var(--sk-inner);
+  transition: border-color var(--sk-dur) var(--azy-ease), box-shadow var(--sk-dur) var(--azy-ease), background-color var(--sk-dur) var(--azy-ease), color var(--sk-dur) var(--azy-ease), transform var(--sk-dur) var(--azy-ease);
+}
+html[data-skin="glow"] .minimal-ui #app :is(.icon-btn, .hero-action) { border-radius: 10px; }
+html[data-skin="glow"] .minimal-ui #app :is(.icon-btn, .hero-action, .file-view-btn, .text-action, .file-filter-btn, .chip, .flow-move-btn, .pins-strip > button):hover:not(:disabled) {
+  border-color: var(--sk-edge-hi); color: var(--azy-text-1); background-color: rgba(var(--hue-rgb), 0.12); box-shadow: var(--sk-glow), var(--sk-inner);
+}
+html[data-skin="glow"] .minimal-ui #app :is(.icon-btn, .hero-action, .file-view-btn, .file-filter-btn, .chip, .pins-strip > button):is(.active, [aria-pressed="true"], .on) {
+  border-color: var(--sk-edge-hi); color: var(--azy-text-1); background-color: rgba(var(--hue-rgb), 0.2); background-image: var(--sk-lit-soft);
+  box-shadow: var(--sk-glow), var(--sk-inner-hi);
+}
+html[data-skin="glow"] .minimal-ui #app :is(.icon-btn, .hero-action):disabled { border-color: var(--sk-edge-faint); color: var(--azy-text-4, var(--azy-text-3)); box-shadow: none; }
+html[data-skin="glow"] .minimal-ui #app .hero-action { color: var(--azy-text-1); }
+html[data-skin="glow"] .minimal-ui #app .hero-action svg { color: var(--sk-ink); }
+/* round "+" (Pin folder) */
+html[data-skin="glow"] .minimal-ui #app .files-hero .hero-action { border-color: var(--sk-edge); }
+
+/* grouped toggles (Media / Sounds, Clip / Selected / Playhead): one lit track */
+html[data-skin="glow"] .minimal-ui #app :is(.files-section-toggle, .file-view-toggle, .azy-scope, .snap-seg, .flow-move) {
+  border: 1px solid var(--sk-edge-soft); background: var(--sk-fill); border-radius: 12px; box-shadow: var(--sk-inner);
+}
+html[data-skin="glow"] .minimal-ui #app :is(.files-section-toggle, .file-view-toggle, .azy-scope) :is(button, .icon-btn) { border-color: transparent; background-color: transparent; box-shadow: none; }
+html[data-skin="glow"] .minimal-ui #app :is(.files-section-toggle, .file-view-toggle, .azy-scope, .snap-seg) :is(button, .icon-btn):is(.active, [aria-pressed="true"], [aria-checked="true"]) {
+  border: 1px solid var(--sk-edge-hi); color: var(--azy-text-1);
+  background-color: rgba(var(--hue-rgb), 0.24); background-image: var(--sk-lit);
+  box-shadow: var(--sk-glow), var(--sk-inner-hi);
+}
+
+/* search: a lit capsule */
+html[data-skin="glow"] .minimal-ui #app .search-input {
+  border: 1px solid var(--sk-edge-soft); border-radius: 12px; background: var(--sk-fill); color: var(--azy-text-1);
+  box-shadow: var(--sk-inner);
+}
+html[data-skin="glow"] .minimal-ui #app .search-input::placeholder { color: color-mix(in srgb, var(--sk-ink) 60%, transparent); }
+html[data-skin="glow"] .minimal-ui #app .search-input:focus { border-color: var(--sk-edge-hi); box-shadow: var(--sk-glow), var(--sk-inner-hi); outline: none; }
+html[data-skin="glow"] .minimal-ui #app .search-icon { color: var(--hue); }
+html[data-skin="glow"] .minimal-ui #app .count-pill { color: var(--sk-ink); border-color: transparent; background: transparent; }
+
+/* breadcrumb / toolbar strips: one framed bar */
+html[data-skin="glow"] .minimal-ui #app .preset-toolbar {
+  border: 1px solid var(--sk-edge-soft); border-radius: var(--sk-r);
+  background: var(--azy-web-bg-tex, none) center / 100% 100% no-repeat, var(--sk-fill-2);
+  box-shadow: var(--sk-inner); margin-inline: 10px;
+}
+html[data-skin="glow"] .minimal-ui #app .breadcrumb { color: var(--sk-ink); }
+html[data-skin="glow"] .minimal-ui #app .breadcrumb :is(strong, b, .crumb-current, :last-child) { color: var(--azy-text-1); }
+html[data-skin="glow"] .minimal-ui #app .wheel-btn-count { background: var(--hue); color: var(--azy-on-accent, var(--azy-text-1)); box-shadow: var(--sk-glow); }
+html[data-skin="glow"] .minimal-ui #app .rack-label { color: var(--sk-ink); }
+
+/* =========================================================================
+   5. CARDS — double frame: outer tile + inner well, fine web texture, lit on hover
+   ========================================================================= */
+html[data-skin="glow"] .minimal-ui #app .file-card {
+  /* Grids can hold hundreds of cards: flat fill + lit hairline at rest (cheap to raster while
+     scrolling); texture-free, blur only on the one card being hovered / selected. */
+  border: 1px solid var(--sk-edge-soft); border-radius: 16px;
+  background: var(--sk-fill-2);
+  box-shadow: inset 0 1px 0 0 rgba(var(--hue-rgb), 0.12);
+  transition: border-color var(--sk-dur) var(--azy-ease), box-shadow var(--sk-dur) var(--azy-ease), transform var(--sk-dur) var(--azy-ease);
+}
+html[data-skin="glow"] .minimal-ui #app .file-card .thumb {
+  border: 1px solid var(--sk-edge-soft); border-radius: 12px;
+  background-color: var(--azy-depth-0, #040404);
+  box-shadow: none;
+}
+html[data-skin="glow"] .minimal-ui #app .file-card:is(:hover, :focus-visible, .is-selected, .selected) {
+  border-color: var(--sk-edge-hi); box-shadow: var(--sk-glow-hi), var(--sk-inner-hi);
+}
+html[data-skin="glow"] .minimal-ui #app .file-card:hover .thumb { border-color: var(--sk-edge); }
+html[data-skin="glow"] .minimal-ui #app .file-card .file-name { color: var(--azy-text-1); font-size: 12.5px; }
+html[data-skin="glow"] .minimal-ui #app .thumb--preset .thumb-fallback,
+html[data-skin="glow"] .minimal-ui #app .thumb--folder .thumb-fallback { color: var(--hue); }
+html[data-skin="glow"] .minimal-ui #app .file-card:hover :is(.thumb-fallback, .thumb--flow > svg) { filter: drop-shadow(0 0 calc(6px * var(--sk-k)) rgba(var(--hue-rgb), calc(0.8 * var(--sk-k)))); }
+html[data-skin="glow"] .minimal-ui #app :is(.fav-badge, .wheel-badge) { border: 1px solid var(--sk-edge-soft); background: var(--sk-fill); color: var(--sk-ink); }
+html[data-skin="glow"] .minimal-ui #app :is(.fav-badge, .wheel-badge):hover,
+html[data-skin="glow"] .minimal-ui #app :is(.fav-badge, .wheel-badge):is(.on, [aria-pressed="true"]) { border-color: var(--sk-edge-hi); color: var(--hue); box-shadow: var(--sk-glow); }
+
+/* sound cards */
+html[data-skin="glow"] .minimal-ui #app .sound-card {
+  border: 1px solid var(--sk-edge-soft); border-radius: 16px;
+  background: var(--sk-fill-2);
+  box-shadow: inset 0 1px 0 0 rgba(var(--hue-rgb), 0.12);
+  transition: border-color var(--sk-dur) var(--azy-ease), box-shadow var(--sk-dur) var(--azy-ease);
+}
+html[data-skin="glow"] .minimal-ui #app .sound-card:hover,
+html[data-skin="glow"] .minimal-ui #app .sound-card.is-playing { border-color: var(--sk-edge-hi); box-shadow: var(--sk-glow-hi), var(--sk-inner-hi); }
+html[data-skin="glow"] .minimal-ui #app .sound-play {
+  border: 1px solid var(--sk-edge); background: radial-gradient(circle at 50% 40%, rgba(var(--hue-rgb), 0.22), var(--azy-depth-0, #040404) 75%);
+  color: var(--azy-text-1); box-shadow: none;
+}
+html[data-skin="glow"] .minimal-ui #app .sound-card:hover .sound-play { box-shadow: var(--sk-glow); }
+html[data-skin="glow"] .minimal-ui #app .sound-wave { color: var(--hue); }
+html[data-skin="glow"] .minimal-ui #app .sound-name { color: var(--azy-text-1); }
+html[data-skin="glow"] .minimal-ui #app .sound-chip { border: 1px solid var(--sk-edge); color: var(--sk-ink); background: rgba(var(--hue-rgb), 0.1); }
+/* .sound-apply → shared .azy-apply (azy-custom.css, v1.18) */
+html[data-skin="glow"] .minimal-ui #app .sound-fav { border: 1px solid var(--sk-edge-soft); color: var(--sk-ink); background: var(--sk-fill); }
+html[data-skin="glow"] .minimal-ui #app .sound-fav:is(.on, [aria-pressed="true"]) { color: var(--hue); border-color: var(--sk-edge-hi); box-shadow: var(--sk-glow); }
+
+/* =========================================================================
+   6. SIDEBARS — Explorer / Sounds / Settings rails
+   ========================================================================= */
+html[data-skin="glow"] .minimal-ui #app :is(.files-sidebar, .sounds-side, .settings-rail) {
+  border: 1px solid var(--sk-edge-soft); border-radius: 14px;
+  background: var(--azy-web-bg-tex, none) center / 100% 100% no-repeat, var(--sk-fill);
+  box-shadow: var(--sk-inner);
+}
+html[data-skin="glow"] .minimal-ui #app :is(.files-sidebar-label) { color: var(--sk-ink); letter-spacing: 0.12em; }
+html[data-skin="glow"] .minimal-ui #app .files-sidebar-head { color: var(--sk-ink); text-shadow: var(--sk-text-glow); }
+html[data-skin="glow"] .minimal-ui #app .files-sidebar-nav-item { border: 1px solid transparent; border-radius: 10px; color: var(--azy-text-1); }
+html[data-skin="glow"] .minimal-ui #app .files-sidebar-nav-item svg { color: var(--hue); }
+html[data-skin="glow"] .minimal-ui #app .files-sidebar-nav-item:hover { border-color: var(--sk-edge-soft); background: rgba(var(--hue-rgb), 0.07); }
+html[data-skin="glow"] .minimal-ui #app .files-sidebar-nav-item:is(.active, [aria-current="true"], [aria-selected="true"]) {
+  border-color: var(--sk-edge-hi); background-color: rgba(var(--hue-rgb), 0.22); background-image: var(--sk-lit);
+  box-shadow: var(--sk-glow), var(--sk-inner-hi); color: var(--azy-text-1);
+}
+html[data-skin="glow"] .minimal-ui #app .settings-cat { border: 1px solid var(--sk-edge-faint); border-radius: 10px; background: var(--sk-fill); color: var(--azy-text-1); }
+html[data-skin="glow"] .minimal-ui #app .settings-cat .settings-cat-icon { color: var(--hue); }
+html[data-skin="glow"] .minimal-ui #app .settings-cat:hover { border-color: var(--sk-edge); box-shadow: var(--sk-glow); }
+html[data-skin="glow"] .minimal-ui #app .settings-cat.active { border-color: var(--sk-edge-hi); background-color: rgba(var(--hue-rgb), 0.22); background-image: var(--sk-lit); box-shadow: var(--sk-glow), var(--sk-inner-hi); }
+
+/* settings cards */
+html[data-skin="glow"] .minimal-ui #app .snap-setting {
+  border: 1px solid var(--sk-edge-soft); border-radius: 14px;
+  background: var(--azy-web-bg-tex, none) center / 100% 100% no-repeat, var(--sk-fill-2);
+  box-shadow: var(--sk-inner);
+}
+html[data-skin="glow"] .minimal-ui #app .settings-h { color: var(--sk-ink); letter-spacing: 0.14em; }
+html[data-skin="glow"] .minimal-ui #app .snap-seg-btn:not(.active) { color: var(--azy-text-2); }
+html[data-skin="glow"] .minimal-ui #app .snap-switch input:checked + * { background-color: rgba(var(--hue-rgb), 0.45); box-shadow: var(--sk-glow); }
+
+/* flow editor + scope note */
+html[data-skin="glow"] .minimal-ui #app .flow-editor { border: 1px solid var(--sk-edge); border-radius: 16px; background: var(--sk-fill-2); box-shadow: var(--sk-glow), var(--sk-inner); }
+html[data-skin="glow"] .minimal-ui #app .flow-graph { border-color: var(--sk-edge-soft); }
+html[data-skin="glow"] .minimal-ui #app .flow-curve-path { filter: drop-shadow(0 0 calc(4px * var(--sk-k)) rgba(var(--hue-rgb), calc(0.8 * var(--sk-k)))); }
+
+/* =========================================================================
+   7. STATUS BAR — framed strip, lit connection + On top
+   ========================================================================= */
+html[data-skin="glow"] .minimal-ui #app .statusbar {
+  margin: 2px 8px 5px; border: 1px solid var(--sk-edge-soft); border-radius: 12px;
+  background: var(--sk-fill); box-shadow: var(--sk-inner);
+}
+html[data-skin="glow"] .minimal-ui #app .status-conn { border-color: var(--sk-edge-soft); background: transparent; color: var(--azy-text-1); }
+html[data-skin="glow"] .minimal-ui #app .status-hint { color: var(--azy-text-2); }
+html[data-skin="glow"] .minimal-ui #app .pin-toggle { border: 1px solid var(--sk-edge-soft); background: var(--sk-fill); color: var(--sk-ink); border-radius: 99px; }
+html[data-skin="glow"] .minimal-ui #app .pin-toggle[aria-pressed="true"] { border-color: var(--sk-edge-hi); color: var(--azy-text-1); background-image: var(--sk-lit-soft); box-shadow: var(--sk-glow), var(--sk-inner-hi); }
+html[data-skin="glow"] .minimal-ui #app .pin-toggle[aria-pressed="true"] .pin-dot { background: var(--hue); box-shadow: var(--sk-glow-hi); }
+html[data-skin="glow"] .minimal-ui #app #appVersionTag { color: var(--sk-ink); }
+
+/* =========================================================================
+   8. DIALOGS / MENUS / TOOLTIPS / TOASTS (azy-ui) — same lit glass
+   ========================================================================= */
+html[data-skin="glow"] :is(.azy-dialog, .azy-menu, .ctx-menu, .context-menu, .toast) {
+  border: 1px solid var(--sk-edge) !important;
+  box-shadow: var(--sk-glow-hi), var(--sk-inner), var(--azy-shadow-3, 0 18px 48px rgb(0 0 0 / 0.5)) !important;
+}
+html[data-skin="glow"] .azy-dialog { background-image: var(--azy-web-bg-tex, none); background-size: 100% 100%; }
+
+/* =========================================================================
+   9. RESPONSIVE — decoration yields first, the workspace never shrinks for it
+   ========================================================================= */
+@media (max-width: 620px) {
+  html[data-skin="glow"] .minimal-ui #app .mode-row { gap: 4px; }
+  html[data-skin="glow"] .minimal-ui #app .mode-tab { min-height: 32px; }
+  html[data-skin="glow"] .minimal-ui #app .brand-word { letter-spacing: 0.24em; font-size: 13px; }
+}
+@media (max-width: 420px) {
+  html[data-skin="glow"] .minimal-ui #app .brand-mark { width: 28px; height: 28px; }
+  html[data-skin="glow"] .minimal-ui #app .app-chrome { min-height: 36px; }
+  html[data-skin="glow"] .minimal-ui #app .brand-mark .azy-sigil { width: 21px; height: 21px; }
+  html[data-skin="glow"] .minimal-ui #app .win-btn { width: 26px; height: 24px; }
+  html[data-skin="glow"] .minimal-ui #app .workspace-shortcut { display: none; }
+  html[data-skin="glow"] .minimal-ui #app :is(.mode-row, .statusbar, .preset-toolbar) { margin-inline: 6px; }
+}
+/* busy (long operation): drop the lit edges' animation budget — static glow only */
+html[data-skin="glow"][data-busy="1"] .minimal-ui #app * { transition-duration: 0ms !important; }
+
+/* =========================================================================
+   10. POP-UPS — Speed · Dagger action card · Snap: see-through glass over Premiere
+   "Fully translucent": a light tint only, so the timeline stays visible behind; text keeps
+   contrast with a soft shadow. Borders + glow carry the shape.
+   ========================================================================= */
+html[data-skin="glow"] { --sk-popup-tint: color-mix(in srgb, var(--azy-depth-0, #040404) 38%, transparent); --sk-popup-tint-2: color-mix(in srgb, var(--azy-depth-0, #040404) 30%, transparent); }
+html[data-skin="glow"] .speed {
+  border: 1px solid var(--sk-edge);
+  background: var(--azy-web-bg-tex, none) center / 100% 100% no-repeat, var(--sk-popup-tint);
+  backdrop-filter: none; -webkit-backdrop-filter: none;
+  box-shadow: inset 0 0 0 1px rgba(var(--hue-rgb), 0.18), var(--sk-inner-hi), 0 0 calc(24px * var(--sk-k)) rgba(var(--hue-rgb), calc(0.35 * var(--sk-k)));
+  text-shadow: 0 1px 3px var(--azy-depth-0, #040404);
+}
+html[data-skin="glow"] .speed-head { border-bottom: 1px solid var(--sk-edge-soft); padding-bottom: 10px; margin-bottom: 8px; }
+html[data-skin="glow"] .speed-head .snap-logo {
+  width: 36px; height: 36px; border-radius: 11px; color: var(--hue);
+  background: radial-gradient(circle at 50% 40%, rgba(var(--hue-rgb), 0.24), var(--sk-popup-tint) 75%);
+  border: 1px solid var(--sk-edge); box-shadow: var(--sk-glow), var(--sk-inner);
+}
+html[data-skin="glow"] .speed-head .snap-logo .azy-sigil { width: 28px; height: 28px; }
+html[data-skin="glow"] .speed-head .snap-title { font-size: 18px; font-weight: 750; color: var(--azy-text-1); }
+html[data-skin="glow"] .speed-head #speedCloseBtn { width: 32px; height: 30px; border-radius: 9px; border: 1px solid var(--sk-edge); background: var(--sk-popup-tint-2); color: var(--azy-text-1); }
+html[data-skin="glow"] .speed-head #speedCloseBtn:hover { border-color: var(--sk-edge-hi); box-shadow: var(--sk-glow); }
+html[data-skin="glow"] :is(.speed-kf-card, .speed-slider-card) {
+  border: 1px solid var(--sk-edge); border-radius: 16px; background: var(--sk-popup-tint-2); box-shadow: var(--sk-inner);
+}
+html[data-skin="glow"] .speed-kf-ic { background: var(--sk-popup-tint-2); border: 1px solid var(--sk-edge); color: var(--azy-text-1); box-shadow: var(--sk-glow); }
+html[data-skin="glow"] .speed-kf-title { font-size: 14px; font-weight: 700; }
+html[data-skin="glow"] :is(.speed-mode, .speed-detect) { border: 1px solid var(--sk-edge); background: rgba(var(--hue-rgb), 0.12); color: var(--azy-text-1); }
+html[data-skin="glow"] .speed-mode[data-mode="selected"] { background-image: var(--sk-lit); box-shadow: var(--sk-glow); }
+html[data-skin="glow"] :is(.speed-mode-dot, .speed-detect-dot) { background: var(--hue); box-shadow: var(--sk-glow); }
+/* the dial: accent ring, not the old fixed violet→cyan */
+html[data-skin="glow"] .speed-dial-ring {
+  background: conic-gradient(from 200deg, rgba(var(--hue-rgb), 0.25), var(--hue) 55%, color-mix(in srgb, var(--hue) 55%, var(--azy-text-1)) 80%, rgba(var(--hue-rgb), 0.25)) !important;
+  filter: drop-shadow(0 0 calc(10px * var(--sk-k)) rgba(var(--hue-rgb), calc(0.7 * var(--sk-k))));
+}
+html[data-skin="glow"] .speed-dial-core { background: radial-gradient(circle at 50% 35%, rgba(var(--hue-rgb), 0.16), var(--sk-popup-tint) 70%) !important; border: 1px solid var(--sk-edge-soft); box-shadow: var(--sk-inner-hi) !important; }
+html[data-skin="glow"] .speed-big { color: var(--azy-text-1) !important; background: none !important; -webkit-text-fill-color: currentColor !important; text-shadow: var(--sk-text-glow); }
+html[data-skin="glow"] .speed-dial-knob::after { background: var(--azy-text-1); box-shadow: 0 0 0 3px rgba(var(--hue-rgb), 0.35), var(--sk-glow-hi) !important; }
+html[data-skin="glow"] .speed-sel-btn {
+  border: 1px solid var(--sk-edge); border-radius: 16px; background: var(--sk-popup-tint-2); color: var(--azy-text-1);
+  box-shadow: var(--sk-inner);
+}
+html[data-skin="glow"] .speed-sel-btn:hover, html[data-skin="glow"] .speed-sel-btn[aria-pressed="true"] { border-color: var(--sk-edge-hi); background-image: var(--sk-lit); box-shadow: var(--sk-glow-hi), var(--sk-inner-hi); }
+html[data-skin="glow"] .speed-sel-btn svg { color: var(--hue); }
+html[data-skin="glow"] .speed-switch i { border: 1px solid var(--sk-edge); background: var(--sk-popup-tint-2); }
+html[data-skin="glow"] .speed-switch input:checked + i { background: rgba(var(--hue-rgb), 0.55); box-shadow: var(--sk-glow); }
+html[data-skin="glow"] .speed :is(.azy-scope, .snap-seg) { border: 1px solid var(--sk-edge); background: var(--sk-popup-tint-2); border-radius: 12px; }
+html[data-skin="glow"] .speed :is(.azy-scope, .snap-seg) button:is(.active, [aria-pressed="true"], [aria-checked="true"]) { border: 1px solid var(--sk-edge-hi); background: var(--sk-lit); color: var(--azy-text-1); box-shadow: var(--sk-glow); }
+html[data-skin="glow"] .speed-slider-wrap > * { border-color: var(--sk-edge); }
+html[data-skin="glow"] .speed-scale span:nth-child(2) { color: var(--hue); font-weight: 700; }
+html[data-skin="glow"] .speed-reset { border: 1px solid var(--sk-edge-soft); background: var(--sk-popup-tint-2); color: var(--azy-text-1); }
+html[data-skin="glow"] .speed-apply {
+  border: 1px solid var(--sk-edge-hi) !important; border-radius: 14px; color: var(--azy-text-1) !important;
+  background: var(--azy-web-bg-tex, none) center / 100% 100% no-repeat, var(--sk-lit) !important;
+  box-shadow: var(--sk-glow-hi), var(--sk-inner-hi) !important; font-weight: 700;
+}
+html[data-skin="glow"] .speed-apply:disabled { opacity: 0.55; box-shadow: var(--sk-inner) !important; }
+html[data-skin="glow"] .speed-foot { color: var(--azy-text-2); }
+
+/* Dagger action card (waiting / sound gain) */
+html[data-skin="glow"] .dagger-action-body main {
+  border: 1px solid var(--sk-edge); background: var(--sk-popup-tint); backdrop-filter: none;
+  box-shadow: var(--sk-inner-hi), 0 0 calc(20px * var(--sk-k)) rgba(var(--hue-rgb), calc(0.35 * var(--sk-k)));
+  text-shadow: 0 1px 3px var(--azy-depth-0, #040404);
+}
+html[data-skin="glow"] .dagger-action-body button { border: 1px solid var(--sk-edge-soft); background: var(--sk-popup-tint-2); color: var(--azy-text-1, #f1f1f1); border-radius: 9px; }
+html[data-skin="glow"] .dagger-action-body button:hover { border-color: var(--sk-edge-hi); box-shadow: var(--sk-glow); }
+html[data-skin="glow"] .dagger-action-body button.primary { border-color: var(--sk-edge-hi); background: var(--sk-lit); box-shadow: var(--sk-glow); }
+
+/* =========================================================================
+   11. DAGGER WHEEL — lit segmented disc, see-through, glowing hub with the spider
+   ========================================================================= */
+/* No filters here: the glow is the prerendered hover wedge (dagger-renderer.js), the static
+   halo and the icon rings — all composited, nothing re-rasterises while you move. */
+html[data-skin="glow"] .sector {
+  fill: color-mix(in srgb, var(--azy-depth-0, #040404) 46%, transparent);
+  stroke: rgba(var(--hue-rgb), 0.5); stroke-width: 1.2;
+}
+html[data-skin="glow"] .sector.picked { fill: color-mix(in srgb, rgb(var(--hue-rgb)) 34%, transparent); stroke: var(--azy-text-1); }
+html[data-skin="glow"] .dagger-web-thread { opacity: calc(0.34 * var(--azy-deco-k, 1) + 0.08); }
+html[data-skin="glow"] .dagger-web-ring { opacity: calc(0.2 * var(--azy-deco-k, 1) + 0.05); }
+html[data-skin="glow"] .dagger-rim { stroke: var(--hue); stroke-width: 2; opacity: 0.8; }
+html[data-skin="glow"] .dg-halo { background: radial-gradient(circle closest-side, transparent 87%, rgba(var(--hue-rgb), 0.3) 91.5%, rgba(var(--hue-rgb), 0.1) 95.5%, transparent 100%); }
+html[data-skin="glow"] .dagger-hub { fill: color-mix(in srgb, var(--azy-depth-0, #040404) 72%, transparent); stroke: var(--hue); stroke-width: 2; }
+html[data-skin="glow"] .dagger-hub-ring { stroke: rgba(var(--hue-rgb), 0.3); stroke-width: 5; stroke-dasharray: 30 8; }
+html[data-skin="glow"] .dagger-sigil { width: 76px; height: 76px; margin: -38px 0 0 -38px; color: var(--hue); }
+html[data-skin="glow"] .dagger-label { color: var(--azy-text-1); font-size: 14px; font-weight: 500; text-shadow: 0 1px 4px var(--azy-depth-0, #040404); }
+html[data-skin="glow"] .dagger-label .ic {
+  width: 46px; height: 46px; border: 1.5px solid var(--sk-edge); color: var(--sk-ink);
+  background: radial-gradient(circle at 50% 40%, rgba(var(--hue-rgb), 0.16), color-mix(in srgb, var(--azy-depth-0, #040404) 60%, transparent) 75%);
+  box-shadow: var(--sk-glow), var(--sk-inner);
+}
+html[data-skin="glow"] .dagger-label .ic svg { width: 22px; height: 22px; }
+html[data-skin="glow"] .dagger-label.hot .ic { border-color: var(--sk-edge-hi); color: var(--azy-text-1); }
+html[data-skin="glow"] .dagger-label .kbd { font-size: 12px; color: var(--azy-text-3); }
+html[data-skin="glow"] .dagger-label.hot .kbd { color: var(--hue); }
+html[data-skin="glow"] .dagger-label--tight .ic { width: 36px; height: 36px; }
+html[data-skin="glow"] .dagger-label--tight .ic svg { width: 17px; height: 17px; }
+html[data-skin="glow"] .dagger-label--flow .ic { width: 56px; height: 38px; border-radius: 9px; }
+html[data-skin="glow"] .dg-hubname { text-shadow: 0 1px 3px var(--azy-depth-0, #040404); }
+
+/* Speed: the inner surfaces inherit the whole-window "solid depth" recipe — clear them so the
+   one translucent card is all there is. */
+html[data-skin="glow"] body.speed-body :is(.speed-main, .snap-head) { background: transparent; border-color: var(--sk-edge-soft); }
+html[data-skin="glow"] body.speed-body .azy-speed { background-color: transparent; }
+/* Settings rail: room for full category names inside the framed rail (icon-only stays below 620px). */
+@media (min-width: 621px) {
+  html[data-skin="glow"] .minimal-ui #app .settings-rail { flex-basis: 150px; margin: 0 0 8px 10px; padding: 8px 7px; }
+}
+html[data-skin="glow"] .minimal-ui #app .settings-workbench { gap: 8px; }
+
+/* =========================================================================
+   14. SNAP ACTION — glass card in the Dagger glow language (v1.15)
+   Lit accent frame + inner glow, round icon tiles whose glow is a radial layer that fades
+   (no box-shadow repaint), the active row is a wedge-style band with a bright accent lip,
+   lit search field, glowing Apply with a sheen, a faint corner web. 30% see-through stays.
+   ========================================================================= */
+html[data-skin="glow"] body.snap-body #snap.snap {
+  border: 1px solid var(--sk-edge);
+  background: var(--azy-web-bg-corner, none) right top / 46% auto no-repeat,
+    radial-gradient(ellipse at 50% -20%, rgba(var(--hue-rgb), calc(0.14 * var(--sk-k))), transparent 60%),
+    color-mix(in srgb, var(--azy-depth-0, #040404) var(--snap-glass, 70%), transparent);
+  box-shadow: inset 0 0 0 1px rgba(var(--hue-rgb), 0.14), var(--sk-inner-hi);
+}
+html[data-skin="glow"] body.snap-body #snap .snap-head { border-bottom-color: var(--sk-edge-soft); }
+html[data-skin="glow"] body.snap-body #snap .snap-logo {
+  border-radius: 50%; border: 1px solid var(--sk-edge); color: var(--hue);
+  background: radial-gradient(circle at 50% 40%, rgba(var(--hue-rgb), 0.26), transparent 72%); box-shadow: var(--sk-glow), var(--sk-inner);
+}
+html[data-skin="glow"] body.snap-body #snap .snap-title { color: var(--azy-text-1); text-shadow: 0 1px 3px var(--azy-depth-0, #040404); }
+html[data-skin="glow"] body.snap-body #snap .snap-conn { border-color: var(--sk-edge-faint); background: rgba(var(--hue-rgb), 0.06); }
+html[data-skin="glow"] body.snap-body #snap .snap-head .icon-btn { border-radius: 9px; border: 1px solid transparent; }
+html[data-skin="glow"] body.snap-body #snap .snap-head .icon-btn:hover { border-color: var(--sk-edge); background: rgba(var(--hue-rgb), 0.12); color: var(--azy-text-1); }
+html[data-skin="glow"] body.snap-body #snap .snap-command-number { border: 1px solid var(--sk-edge); background: rgba(var(--hue-rgb), 0.14); color: var(--sk-ink); box-shadow: var(--sk-glow); }
+html[data-skin="glow"] body.snap-body #snap .snap-input {
+  border: 1px solid var(--sk-edge); border-radius: 12px; color: var(--azy-text-1);
+  background: color-mix(in srgb, var(--azy-depth-0, #040404) 50%, transparent);
+  box-shadow: var(--sk-inner), var(--sk-glow);
+}
+html[data-skin="glow"] body.snap-body #snap .snap-input:focus { border-color: var(--sk-edge-hi); box-shadow: var(--sk-inner-hi), var(--sk-glow-hi); }
+html[data-skin="glow"] body.snap-body #snap .snap-search svg { color: var(--hue); }
+html[data-skin="glow"] body.snap-body #snap .snap-seg { border: 1px solid var(--sk-edge-soft); background: rgba(var(--hue-rgb), 0.05); border-radius: 10px; }
+html[data-skin="glow"] body.snap-body #snap .snap-seg-btn.active { background: var(--sk-lit); color: var(--azy-text-1); box-shadow: var(--sk-glow); border-radius: 8px; }
+html[data-skin="glow"] body.snap-body #snap .snap-group { color: var(--sk-ink); text-shadow: var(--sk-text-glow); }
+html[data-skin="glow"] body.snap-body #snap .snap-group .n { border: 1px solid var(--sk-edge-soft); background: rgba(var(--hue-rgb), 0.14); color: var(--azy-text-1); }
+
+/* rows */
+html[data-skin="glow"] body.snap-body #snap .snap-row { position: relative; border: 1px solid var(--sk-edge-faint); border-radius: var(--sk-r); background: color-mix(in srgb, var(--azy-depth-0, #040404) 38%, transparent); }
+html[data-skin="glow"] body.snap-body #snap .snap-row:hover { border-color: var(--sk-edge-soft); background: color-mix(in srgb, rgb(var(--hue-rgb)) 7%, color-mix(in srgb, var(--azy-depth-0, #040404) 38%, transparent)); }
+html[data-skin="glow"] body.snap-body #snap .snap-row.active {
+  border-color: var(--sk-edge-hi);
+  background: linear-gradient(90deg, rgba(var(--hue-rgb), 0.3), rgba(var(--hue-rgb), 0.1) 45%, rgba(var(--hue-rgb), 0.04));
+  box-shadow: var(--sk-inner-hi), var(--sk-glow);
+}
+/* the wedge's bright lip, on the leading edge of the active row */
+html[data-skin="glow"] body.snap-body #snap .snap-row::before {
+  content: ''; position: absolute; left: -1px; top: 18%; bottom: 18%; width: 3px; border-radius: 3px;
+  background: var(--hue); box-shadow: 0 0 8px 1px rgba(var(--azy-glow-rgb-user, var(--hue-rgb)), calc(0.8 * var(--azy-glow-k, 1))); opacity: 0; transform: scaleY(0.4);
+  transition: opacity var(--sk-dur) ease, transform calc(180ms * var(--azy-speed-k, 1)) var(--azy-ease-out, ease-out);
+}
+html[data-skin="glow"] body.snap-body #snap .snap-row.active::before { opacity: 1; transform: none; }
+html[data-skin="glow"] body.snap-body #snap .snap-ic {
+  position: relative; border-radius: 50%; border: 1px solid var(--sk-edge-soft); color: var(--sk-ink);
+  background: radial-gradient(circle at 50% 40%, rgba(var(--hue-rgb), 0.16), transparent 75%);
+}
+html[data-skin="glow"] body.snap-body #snap .snap-ic::after { content: ''; position: absolute; inset: -9px; border-radius: 50%; background: radial-gradient(circle, rgba(var(--hue-rgb), 0.42), transparent 66%); opacity: 0; transition: opacity calc(140ms * var(--azy-speed-k, 1)) ease; z-index: -1; pointer-events: none; }
+html[data-skin="glow"] body.snap-body #snap .snap-row:is(:hover, .active) .snap-ic { border-color: var(--sk-edge-hi); color: var(--azy-text-1); }
+html[data-skin="glow"] body.snap-body #snap .snap-row:is(:hover, .active) .snap-ic::after { opacity: 1; }
+html[data-skin="glow"] body.snap-body #snap .snap-tag { border-color: var(--sk-edge-faint); background: rgba(var(--hue-rgb), 0.05); }
+html[data-skin="glow"] body.snap-body #snap .snap-tag.kind { border-color: var(--sk-edge-soft); background: rgba(var(--hue-rgb), 0.12); color: var(--azy-text-1); }
+html[data-skin="glow"] body.snap-body #snap .snap-star.on { color: var(--hue); text-shadow: var(--sk-text-glow); }
+html[data-skin="glow"] body.snap-body #snap .snap-apply {
+  position: relative; overflow: hidden; border: 1px solid var(--sk-edge-hi); color: var(--azy-text-1); font-weight: 700;
+  background: var(--sk-lit); box-shadow: var(--sk-glow-hi), var(--sk-inner-hi);
+}
+html[data-skin="glow"] body.snap-body #snap .snap-apply kbd { border-color: var(--sk-edge-soft); background: rgba(var(--hue-rgb), 0.18); color: var(--azy-text-1); }
+html[data-skin="glow"] body.snap-body #snap .snap-foot kbd { border-color: var(--sk-edge-faint); background: rgba(var(--hue-rgb), 0.06); }
+html[data-skin="glow"] body.snap-body #snap .snap-sel { color: var(--sk-ink); }
+html[data-skin="glow"] body.snap-body .snap-dialog { border-color: var(--sk-edge); box-shadow: var(--sk-inner-hi), 0 0 calc(24px * var(--sk-k)) rgba(var(--hue-rgb), calc(0.3 * var(--sk-k))); }
+html[data-skin="glow"] body.snap-body .snap-dialog-opt.active { border-color: var(--sk-edge-hi); background: var(--sk-lit); box-shadow: var(--sk-glow); }
+
+/* =========================================================================
+   v1.17 MINIMAL LAYER (Prompt 9) — near-black + charcoal, red only where it means something.
+   Resting surfaces, borders, text and icons are neutral; the accent (and glow) is reserved for
+   active / selected / focus / hover-intent / important states, which keep their own tokens
+   (--sk-edge-hi, --sk-lit, --sk-glow-hi, --sk-inner-hi). Same selectors as the token block above,
+   loaded later, so this wins in every window without touching layout or structure.
+   ========================================================================= */
+html[data-skin="glow"] {
+  --azy-web-a-frame: 0.16;           /* quieter frame web: present, never busy */
+  --azy-web-glow: 0;                 /* no blurred halo under the web */
+  --sk-ink: var(--azy-text-2, #bebebe);                          /* resting text / icons: neutral */
+  --sk-edge-faint: var(--azy-border-hair);
+  --sk-edge-soft: var(--azy-border);
+  --sk-edge: var(--azy-border-strong);                          /* hover edge: brighter, still neutral */
+  --sk-fill: color-mix(in srgb, var(--azy-depth-2, #101010) clamp(30%, calc(100% - 18% * var(--azy-glass-k, 1)), 100%), transparent);
+  --sk-inner: inset 0 1px 0 var(--azy-border-hair);          /* no resting inner glow */
+  --sk-lit: linear-gradient(180deg, rgba(var(--hue-rgb), 0.24), rgba(var(--hue-rgb), 0.08) 60%, rgba(var(--hue-rgb), 0.13));
+  --sk-lit-soft: linear-gradient(180deg, rgba(var(--hue-rgb), 0.11), rgba(var(--hue-rgb), 0.03));
+  --sk-glow: 0 0 calc(12px * var(--sk-k)) calc(-2px * var(--sk-k)) rgba(var(--azy-glow-rgb-user, var(--hue-rgb)), calc(0.5 * var(--sk-k)));  /* v1.18: visible 0 → 150% range */
+  --sk-glow-hi: 0 0 calc(22px * var(--sk-k)) calc(-3px * var(--sk-k)) rgba(var(--azy-glow-rgb-user, var(--hue-rgb)), calc(0.6 * var(--sk-k))), 0 0 calc(5px * var(--sk-k)) rgba(var(--azy-glow-rgb-user, var(--hue-rgb)), calc(0.35 * var(--sk-k)));  /* v1.18: visible 0 → 150% range */
+  --sk-inner-hi: inset 0 0 calc(16px * var(--sk-k)) rgba(var(--azy-glow-rgb-user, var(--hue-rgb)), calc(0.2 * var(--sk-k)));  /* v1.18: visible 0 → 150% range */
+  --sk-text-glow: 0 0 calc(8px * var(--sk-k)) rgba(var(--azy-glow-rgb-user, var(--hue-rgb)), calc(0.35 * var(--sk-k)));
+  /* Surfaces: plain near-black/charcoal (no accent wash in the depth ladder). */
+  --azy-depth-0t: var(--azy-depth-0);
+  --azy-depth-1t: var(--azy-depth-1);
+  --azy-depth-2t: var(--azy-depth-2);
+  --azy-depth-4t: var(--azy-depth-4);
+  --azy-glass-tint: none;
+  --azy-border-accent-soft: var(--azy-border);
+  --sk-fill-2: color-mix(in srgb, var(--azy-depth-1, #0b0b0b) clamp(30%, calc(100% - 12% * var(--azy-glass-k, 1)), 100%), transparent);
+}
+/* Window frame: a neutral hairline; the accent edge/inner glow is gone (no frame or corner glow). */
+html[data-skin="glow"] .minimal-ui #app { border-color: var(--azy-border-hair); box-shadow: none; }
+html[data-skin="glow"] body.minimal-ui,
+html[data-skin="glow"][data-motion="full"]:not([data-perf="performance"]) body.minimal-ui {
+  background: var(--azy-web-bg-frame, none) center / 100% 100% no-repeat, linear-gradient(180deg, var(--azy-depth-1, #080808), var(--azy-depth-0, #040404));
+  background-color: var(--azy-depth-0, #040404);
+}
+html[data-skin="glow"][data-motion="full"]:not([data-perf="performance"]) body.minimal-ui { background: linear-gradient(180deg, var(--azy-depth-1, #080808), var(--azy-depth-0, #040404)); background-color: var(--azy-depth-0); }
+/* Cards (Files / Presets / Flow): neutral at rest, a red hairline on hover, red + glow only when
+   selected or keyboard-focused. Matches minimal.css's two-id selectors so it actually wins. */
+html[data-skin="glow"] body.minimal-ui #app :is(#fileGrid, #presetGrid, #flowGrid) .file-card {
+  border: 1px solid var(--sk-edge-soft); background: var(--sk-fill-2); box-shadow: none;
+}
+html[data-skin="glow"] body.minimal-ui #app :is(#fileGrid, #presetGrid, #flowGrid) .file-card:hover { border-color: rgba(var(--hue-rgb), 0.5); box-shadow: none; }
+html[data-skin="glow"] body.minimal-ui #app :is(#fileGrid, #presetGrid, #flowGrid) .file-card:is(:focus-visible, .is-selected, .selected) {
+  border-color: var(--sk-edge-hi); box-shadow: var(--sk-glow-hi), var(--sk-inner-hi);
+}
+html[data-skin="glow"] body.minimal-ui #app :is(#fileGrid, #presetGrid, #flowGrid) .file-card .thumb {
+  border-color: var(--sk-edge-faint); background: var(--azy-depth-0, #040404);
+}
+html[data-skin="glow"] body.minimal-ui #app :is(#fileGrid, #presetGrid, #flowGrid) .file-card .file-name { color: var(--azy-text-1); }
+html[data-skin="glow"] body.minimal-ui #app :is(#fileGrid, #presetGrid, #flowGrid) .file-card--folder { background: var(--sk-fill-2); }
+html[data-skin="glow"] .minimal-ui #app :is(.thumb--preset, .thumb--folder) .thumb-fallback { color: var(--azy-text-3, #8f8f8f); }
+html[data-skin="glow"] .minimal-ui #app .file-card:is(:hover, .selected, .is-selected) :is(.thumb--preset, .thumb--folder) .thumb-fallback { color: var(--hue); }
+html[data-skin="glow"] .minimal-ui #app .file-card:hover :is(.thumb-fallback, .thumb--flow > svg) { filter: none; }
+html[data-skin="glow"] body.minimal-ui #app :is(.thumb--file, .thumb--audio) { color: var(--azy-text-3, #8f8f8f); }
+html[data-skin="glow"] body.minimal-ui #app .file-card:is(:hover, .selected, .is-selected) :is(.thumb--file, .thumb--audio) { color: var(--hue-soft, var(--hue)); }
+html[data-skin="glow"] body.minimal-ui #app .settings-cat .settings-cat-icon { color: var(--azy-text-2, #bebebe); background: var(--azy-hover-bg); border-color: var(--azy-border); }
+html[data-skin="glow"] body.minimal-ui #app .settings-cat:is(.active, :hover) .settings-cat-icon { color: var(--hue); background: rgba(var(--hue-rgb), 0.12); border-color: rgba(var(--hue-rgb), 0.35); }
+
+/* v1.20 Dark (noir): white webs read ~5× brighter than red ones at the same alpha, so the web layer
+   is scaled down to the same visual weight. Performance / webs-off still force 0 (more specific). */
+html[data-skin="glow"][data-theme="noir"] { --azy-web-a-frame: 0.085; --azy-web-a-bg: 0.028; }
+html[data-skin="glow"][data-theme="noir"]:is([data-perf="performance"], [data-webs="off"]) { --azy-web-a-frame: 0; }
+html[data-skin="glow"][data-theme="noir"][data-perf="balanced"] { --azy-web-a-frame: 0.06; }

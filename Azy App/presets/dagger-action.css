@@ -1,0 +1,240 @@
+/* Dagger action window.
+   Two faces, one small transparent window:
+   • body.toast  — "Applying… / Applied / Could not apply": a compact status toast that main
+                   places in the TOP-RIGHT corner of the screen. Never takes focus.
+   • (default)   — the SFX volume card (interactive, centred on screen).
+   Colours come only from the shared tokens (accent = --hue-rgb). Motion is transform/opacity;
+   Performance mode shortens it and Reduced motion removes it. */
+* { box-sizing: border-box; }
+html, body { background: transparent; }
+body { margin: 0; color: var(--azy-text-1, #f0f0f0); font-size: 12px; overflow: hidden; }
+[hidden] { display: none !important; }
+
+main {
+  position: relative; margin: 8px; padding: 11px 13px 10px;
+  border: 1px solid rgba(var(--hue-rgb, 214, 40, 63), 0.38); border-radius: 13px;
+  background: color-mix(in srgb, var(--azy-depth-1, #0b0b0b) 86%, transparent);
+  box-shadow: 0 12px 32px -10px rgba(0, 0, 0, 0.7), inset 0 1px 0 0 rgba(var(--hue-rgb, 214, 40, 63), 0.14);
+  overflow: hidden;
+  animation: daIn 200ms var(--azy-ease-out, cubic-bezier(.2, .8, .2, 1)) both;
+}
+@keyframes daIn { from { opacity: 0; transform: translate3d(0, 6px, 0) scale(0.98); } to { opacity: 1; transform: none; } }
+
+header {
+  display: flex; align-items: center; justify-content: space-between;
+  font-size: 9px; font-weight: 650; letter-spacing: 0.18em; color: rgba(var(--hue-rgb, 214, 40, 63), 0.85);
+  -webkit-app-region: drag;
+}
+.hdr-btns { display: flex; gap: 2px; -webkit-app-region: no-drag; }
+
+button {
+  -webkit-app-region: no-drag; font: inherit; color: var(--azy-text-1, #f0f0f0); cursor: pointer;
+  border: 1px solid rgba(var(--hue-rgb, 214, 40, 63), 0.3); border-radius: 7px;
+  background: rgba(var(--hue-rgb, 214, 40, 63), 0.08); padding: 5px 12px;
+  transition: background-color 120ms var(--azy-ease, ease), border-color 120ms var(--azy-ease, ease), transform 110ms var(--azy-ease, ease);
+}
+button:hover:not(:disabled) { background: rgba(var(--hue-rgb, 214, 40, 63), 0.18); border-color: rgba(var(--hue-rgb, 214, 40, 63), 0.6); }
+button:active:not(:disabled) { transform: scale(0.96); }
+button:focus-visible { outline: 2px solid rgb(var(--hue-rgb, 214, 40, 63)); outline-offset: 2px; }
+button:disabled { opacity: 0.4; cursor: default; }
+#mini, #close { width: 22px; height: 20px; padding: 0; border: 0; background: transparent; color: var(--azy-text-3, #8b8b8b); font-size: 12px; line-height: 20px; }
+#mini:hover, #close:hover:not(:disabled) { color: var(--azy-text-1, #fff); background: rgba(var(--hue-rgb, 214, 40, 63), 0.16); }
+
+/* ---- status (waiting / done / error) ---------------------------------------------- */
+#waitbox { margin-top: 8px; display: grid; grid-template-columns: 24px minmax(0, 1fr); column-gap: 10px; row-gap: 1px; align-items: center; }
+#spinner { grid-row: 1 / span 3; position: relative; width: 22px; height: 22px; align-self: start; margin-top: 2px; }
+#spinner span { display: none; }
+#spinner span:first-child {
+  display: block; position: absolute; inset: 0; border-radius: 50%;
+  border: 2px solid rgba(var(--hue-rgb, 214, 40, 63), 0.22); border-top-color: rgb(var(--hue-rgb, 214, 40, 63));
+  animation: daSpin 0.8s linear infinite;
+}
+@keyframes daSpin { to { transform: rotate(360deg); } }
+/* done / error mark replaces the spinner (renderer hides #spinner when not waiting) */
+#waitbox::before { content: none; }
+body.is-done #waitbox::before, body.is-error #waitbox::before {
+  content: '\2713'; grid-row: 1 / span 3; grid-column: 1; align-self: start; margin-top: 2px;
+  width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; font-size: 12px; font-weight: 700;
+  border: 2px solid rgb(var(--hue-rgb, 214, 40, 63)); background: rgba(var(--hue-rgb, 214, 40, 63), 0.16);
+  animation: daPop 240ms var(--azy-ease-out, ease-out) both;
+}
+body.is-done #waitbox::before { content: ''; }
+/* the check is drawn, not a font glyph, so it renders identically on every machine */
+body.is-done #waitbox::after {
+  content: ''; grid-row: 1; grid-column: 1; align-self: start; justify-self: center; margin-top: 8px;
+  width: 8px; height: 4px; border-left: 2px solid currentColor; border-bottom: 2px solid currentColor;
+  transform: rotate(-45deg); animation: daPop 240ms 60ms var(--azy-ease-out, ease-out) both;
+}
+body.is-error #waitbox::before { content: '!'; border-color: var(--azy-err, #ff6b6b); background: rgba(255, 107, 107, 0.14); }
+body.toast:is(.is-done, .is-error) #mini { display: none; }
+@keyframes daPop { from { opacity: 0; scale: 0.4; } to { opacity: 1; scale: 1; } }
+h1 { grid-column: 2; margin: 0; font-size: 13px; font-weight: 650; line-height: 1.3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+#name { grid-column: 2; margin: 0; color: rgb(var(--hue-rgb, 214, 40, 63)); font-size: 11px; font-weight: 550; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+#detail { grid-column: 2; margin: 0; min-height: 14px; color: var(--azy-text-2, #bababa); font-size: 10.5px; line-height: 1.35; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.wait-btns { grid-column: 2; display: flex; justify-content: flex-start; gap: 6px; margin-top: 7px; }
+.wait-btns button { height: 22px; padding: 0 10px; font-size: 11px; line-height: 20px; }
+
+/* toast face: header folds away, window buttons float top-right, a thin accent line runs
+   along the top edge while Premiere works */
+body.toast main { margin: 6px; padding: 10px 10px 10px 12px; border-radius: 12px; animation-name: daToastIn; }
+@keyframes daToastIn { from { opacity: 0; transform: translate3d(16px, 0, 0); } to { opacity: 1; transform: none; } }
+body.toast header { position: absolute; top: 6px; right: 6px; }
+body.toast .brand { display: none; }
+body.toast #waitbox { margin-top: 0; }
+body.toast h1 { margin-right: 44px; }
+body.toast main::before {
+  content: ''; position: absolute; top: 0; left: 0; width: 40%; height: 2px;
+  background: linear-gradient(90deg, transparent, rgb(var(--hue-rgb, 214, 40, 63)), transparent);
+  animation: daRun 1.25s cubic-bezier(.45, .05, .55, .95) infinite;
+}
+body.toast.is-done main::before, body.toast.is-error main::before { animation: none; opacity: 0; }
+@keyframes daRun { from { transform: translateX(-100%); } to { transform: translateX(250%); } }
+
+/* ---- Sound volume card (v1.22: matches the Speed / Snap popups) ------------------------
+   Same ids, keys and IPC as before (−5 / +5, arrows ±1, Enter, Esc, remembered level). The look
+   follows Speed: translucent frosted card with an accent hairline, accent icon tile + bold title,
+   an inset slider card (step · track · step · value pill), and a full-width accent Apply. The
+   read-only meter became a real slider (drag or click to set the level). Colours come only from
+   theme tokens (accent = --hue-rgb). `#gain` / the body selector out-rank the skin's generic popup
+   button tint, so this card reads the same on every skin; the status toast keeps its own look. */
+html[data-skin] body.dagger-action-body:not(.toast):not(.mini) main,
+body.dagger-action-body:not(.toast):not(.mini) main {
+  padding: 12px 14px 10px;
+  border: 1px solid rgba(var(--hue-rgb, 214, 40, 63), 0.34);
+  border-radius: 16px;
+  background:
+    linear-gradient(90deg, transparent 15%, rgba(var(--hue-rgb, 214, 40, 63), 0.42) 50%, transparent 85%) top / 100% 1px no-repeat,
+    linear-gradient(160deg, rgba(27, 27, 27, 0.80), rgba(10, 10, 10, 0.76));
+  -webkit-backdrop-filter: blur(16px) saturate(1.25);
+  backdrop-filter: blur(16px) saturate(1.25);
+  box-shadow: 0 0 0 1px rgba(var(--hue-rgb, 214, 40, 63), 0.10), 0 14px 32px -12px rgba(0, 0, 0, 0.75),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  text-shadow: none;
+}
+/* window buttons float top-right like Speed's close; the brand line gives way to the card's own title */
+body.dagger-action-body:not(.toast):not(.mini) header { position: absolute; top: 10px; right: 10px; z-index: 1; }
+body.dagger-action-body:not(.toast):not(.mini) .brand { display: none; }
+body.dagger-action-body:not(.toast):not(.mini) #mini,
+body.dagger-action-body:not(.toast):not(.mini) #close {
+  width: 24px; height: 24px; line-height: 22px; border-radius: 8px; font-size: 13px;
+  border: 1px solid rgba(255, 255, 255, 0.08); background: rgba(255, 255, 255, 0.03); color: var(--azy-text-3, #9a9a9a);
+}
+body.dagger-action-body:not(.toast):not(.mini) #mini:hover,
+body.dagger-action-body:not(.toast):not(.mini) #close:hover:not(:disabled) {
+  color: var(--azy-text-1, #fff); background: rgba(var(--hue-rgb, 214, 40, 63), 0.16); border-color: rgba(var(--hue-rgb, 214, 40, 63), 0.45);
+}
+
+body.dagger-action-body #gain { animation: daGainIn 220ms var(--azy-ease-out, cubic-bezier(.2, .8, .2, 1)) both; }
+@keyframes daGainIn { from { opacity: 0; transform: translate3d(0, 4px, 0); } to { opacity: 1; transform: none; } }
+.gain-head { display: flex; align-items: center; gap: 10px; min-width: 0; margin-right: 58px; -webkit-app-region: drag; }
+.gain-ic {
+  flex: none; width: 28px; height: 28px; border-radius: 9px; display: inline-flex; align-items: center; justify-content: center;
+  color: #fff;
+  background: linear-gradient(135deg, rgb(var(--hue-rgb, 214, 40, 63)), color-mix(in srgb, rgb(var(--hue-rgb, 214, 40, 63)) 62%, #000));
+  box-shadow: 0 3px 10px rgba(var(--azy-glow-rgb-user, var(--hue-rgb, 214, 40, 63)), calc(0.35 * var(--azy-glow-k, 1)));
+}
+/* near-white accents (the default Dark theme) get a dark glyph so the tile never washes out */
+html[data-theme="noir"] .gain-ic { color: #111; }
+.gain-titles { display: flex; flex-direction: column; min-width: 0; line-height: 1.2; }
+.gain-title { font-size: 13.5px; font-weight: 750; letter-spacing: 0.01em; color: var(--azy-text-1, #f2f2f2); }
+.gain-name { margin-top: 1px; font-size: 10.5px; font-weight: 500; color: var(--azy-text-3, #9a9a9a); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+.gain-card {
+  margin-top: 10px; padding: 8px 8px 5px;
+  border: 1px solid rgba(255, 255, 255, 0.09); border-radius: 12px;
+  background: color-mix(in srgb, color-mix(in srgb, rgb(var(--hue-rgb, 214, 40, 63)) 8%, var(--azy-depth-0, #050505)) 50%, transparent);
+}
+.gain-row { display: flex; align-items: center; gap: 6px; }
+body.dagger-action-body #gain .gain-step {
+  flex: none; width: 28px; height: 24px; min-width: 0; padding: 0; border-radius: 8px;
+  font-size: 10.5px; font-weight: 650; font-variant-numeric: tabular-nums; letter-spacing: 0;
+  color: var(--azy-text-2, #cfcfcf); background: transparent; border: 1px solid transparent; box-shadow: none;
+}
+body.dagger-action-body #gain .gain-step:hover:not(:disabled) { color: var(--azy-text-1, #fff); background: rgba(255, 255, 255, 0.08); border-color: rgba(255, 255, 255, 0.08); box-shadow: none; }
+body.dagger-action-body #gain .gain-step:active:not(:disabled) { transform: scale(0.92); }
+/* the slider: filled from the 0 dB mark toward the thumb (--lo / --hi set by the renderer) */
+.gain-range {
+  --lo: 0.6667; --hi: 0.6667;
+  -webkit-appearance: none; appearance: none; flex: 1; min-width: 0; height: 22px; margin: 0; background: transparent; cursor: pointer;
+  -webkit-app-region: no-drag;
+}
+.gain-range:focus { outline: none; }
+.gain-range::-webkit-slider-runnable-track {
+  height: 3px; border-radius: 3px;
+  background:
+    linear-gradient(90deg, transparent calc(66.667% - 1px), rgba(255, 255, 255, 0.45) calc(66.667% - 1px), rgba(255, 255, 255, 0.45) calc(66.667% + 1px), transparent calc(66.667% + 1px)),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.12) calc(var(--lo) * 100%), rgb(var(--hue-rgb, 214, 40, 63)) calc(var(--lo) * 100%), rgb(var(--hue-rgb, 214, 40, 63)) calc(var(--hi) * 100%), rgba(255, 255, 255, 0.12) calc(var(--hi) * 100%));
+}
+.gain-range::-webkit-slider-thumb {
+  -webkit-appearance: none; width: 14px; height: 14px; margin-top: -5.5px; border-radius: 50%; background: #fff;
+  box-shadow: 0 0 0 3px rgba(var(--hue-rgb, 214, 40, 63), 0.28), 0 1px 4px rgba(0, 0, 0, 0.6);
+  transition: transform 120ms var(--azy-ease, ease), box-shadow 120ms var(--azy-ease, ease);
+}
+.gain-range:hover::-webkit-slider-thumb { transform: scale(1.1); }
+.gain-range:active::-webkit-slider-thumb { transform: scale(1.18); box-shadow: 0 0 0 4px rgba(var(--hue-rgb, 214, 40, 63), 0.36), 0 1px 4px rgba(0, 0, 0, 0.6); }
+.gain-range:focus-visible::-webkit-slider-thumb { box-shadow: 0 0 0 2px rgb(var(--hue-rgb, 214, 40, 63)), 0 1px 4px rgba(0, 0, 0, 0.6); }
+.gain-row output {
+  flex: none; min-width: 58px; height: 24px; line-height: 22px; padding: 0 6px; text-align: center;
+  border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 8px; background: rgba(9, 9, 9, 0.44);
+  font-size: 11.5px; font-weight: 650; font-variant-numeric: tabular-nums; color: var(--azy-text-1, #f2f2f2);
+  transition: color 140ms var(--azy-ease, ease), border-color 140ms var(--azy-ease, ease);
+}
+.gain-row output[data-sign="up"] { color: color-mix(in srgb, rgb(var(--hue-rgb, 214, 40, 63)) 45%, #fff); border-color: rgba(var(--hue-rgb, 214, 40, 63), 0.45); }
+.gain-row output[data-sign="down"] { color: var(--azy-text-2, #c4c4c4); }
+.gain-row output.bump { animation: daBump 160ms var(--azy-ease-out, ease-out); }
+@keyframes daBump { 0% { scale: 1.06; } 100% { scale: 1; } }
+/* scale labels line up with the track (between the step buttons; 0 dB sits at two-thirds) */
+.gain-scale { position: relative; height: 12px; margin: 1px 98px 0 34px; font-size: 9px; color: var(--azy-text-3, #8f8f8f); font-variant-numeric: tabular-nums; }
+.gain-scale span { position: absolute; top: 0; white-space: nowrap; }
+.gain-scale span:first-child { left: 0; }
+.gain-scale span:last-child { right: 0; }
+.gain-scale .gain-scale-zero { left: 66.667%; transform: translateX(-50%); color: color-mix(in srgb, rgb(var(--hue-rgb, 214, 40, 63)) 55%, #fff); }
+
+.buttons { display: flex; gap: 8px; margin-top: 10px; }
+body.dagger-action-body #gain .buttons button {
+  height: 30px; padding: 0 14px; border-radius: 10px; font-size: 11.5px; font-weight: 550;
+  color: var(--azy-text-2, #cfcfcf); background: transparent; border: 1px solid rgba(255, 255, 255, 0.1); box-shadow: none;
+}
+body.dagger-action-body #gain .buttons button:hover:not(:disabled) { color: var(--azy-text-1, #f2f2f2); background: rgba(255, 255, 255, 0.06); border-color: rgba(255, 255, 255, 0.18); box-shadow: none; }
+/* primary: Speed's Apply (accent gradient, full width). Light text; Dark theme's near-white accent gets dark text. */
+body.dagger-action-body #gain .buttons button.primary {
+  flex: 1; color: #fff; font-weight: 650; border: none;
+  background: linear-gradient(135deg, rgb(var(--hue-rgb, 214, 40, 63)), color-mix(in srgb, rgb(var(--hue-rgb, 214, 40, 63)) 62%, #000));
+  box-shadow: 0 5px 14px -4px rgba(var(--azy-glow-rgb-user, var(--hue-rgb, 214, 40, 63)), calc(0.45 * var(--azy-glow-k, 1)));
+}
+body.dagger-action-body #gain .buttons button.primary:hover:not(:disabled) { color: #fff; filter: brightness(1.08); background: linear-gradient(135deg, rgb(var(--hue-rgb, 214, 40, 63)), color-mix(in srgb, rgb(var(--hue-rgb, 214, 40, 63)) 62%, #000)); border: none; }
+html[data-theme="noir"] body.dagger-action-body #gain .buttons button.primary,
+html[data-theme="noir"] body.dagger-action-body #gain .buttons button.primary:hover:not(:disabled) { color: #111; }
+.hint { font-size: 9.5px; text-align: center; color: var(--azy-text-3, #8f8f8f); line-height: 1.3; margin: 7px 0 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+html[data-perf="performance"] body.dagger-action-body:not(.toast):not(.mini) main { -webkit-backdrop-filter: none; backdrop-filter: none; background: color-mix(in srgb, var(--azy-depth-1, #0b0b0d) 92%, transparent); }
+html[data-perf="performance"] body.dagger-action-body #gain { animation-duration: 90ms; }
+html[data-motion="reduced"] body.dagger-action-body #gain, html[data-motion="reduced"] .gain-row output, html[data-motion="reduced"] .gain-range::-webkit-slider-thumb { transition: none; animation: none; }
+@media (prefers-reduced-motion: reduce) { body.dagger-action-body #gain, .gain-row output, .gain-range::-webkit-slider-thumb { transition: none; animation: none; } }
+#error { font-size: 10.5px; color: var(--azy-err, #ff8f8f); line-height: 1.4; margin: 7px 0 0; }
+
+/* ---- minimized: a small pill in the same corner --------------------------------------- */
+body.mini main { margin: 6px; padding: 6px 6px 6px 9px; border-radius: 999px; display: flex; align-items: center; gap: 8px; -webkit-app-region: drag; }
+body.mini main::before, body.mini .brand, body.mini #name, body.mini #detail, body.mini .wait-btns, body.mini #gain, body.mini #error { display: none; }
+body.mini header { display: contents; }
+body.mini .hdr-btns { order: 2; margin-left: auto; position: static; }
+body.mini #close { display: none; }
+body.mini #waitbox { order: 1; margin: 0; display: flex; align-items: center; gap: 8px; flex: 1; min-width: 0; }
+body.mini #spinner { width: 16px; height: 16px; margin: 0; flex: none; }
+body.mini h1 { margin: 0; font-size: 11px; max-width: 130px; }
+
+/* ---- v1.21 close: the window closes the moment the work is done; this exit runs while main
+   hides it (≈170 ms). Opacity/transform only, and nothing waits on it. ------------------------ */
+body.closing main { animation: daOut 150ms var(--azy-ease-in, cubic-bezier(.4, 0, 1, 1)) forwards; pointer-events: none; }
+body.toast.closing main { animation-name: daToastOut; }
+@keyframes daOut { from { opacity: 1; transform: none; } to { opacity: 0; transform: translate3d(0, 4px, 0) scale(0.97); } }
+@keyframes daToastOut { from { opacity: 1; transform: none; } to { opacity: 0; transform: translate3d(14px, 0, 0); } }
+html[data-perf="performance"] body.closing main { animation-duration: 80ms; }
+html[data-motion="reduced"] body.closing main { animation: none; opacity: 0; }
+@media (prefers-reduced-motion: reduce) { body.closing main { animation: none; opacity: 0; } }
+
+/* ---- quality modes ---------------------------------------------------------------------- */
+html[data-perf="performance"] main { animation-duration: 90ms; }
+html[data-perf="performance"] body.toast main::before { animation-duration: 1.6s; }
+html[data-motion="reduced"] main, html[data-motion="reduced"] body.toast main::before { animation: none; }
+@media (prefers-reduced-motion: reduce) { main, body.toast main::before, #spinner span:first-child { animation: none; } }

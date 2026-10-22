@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en" data-section="files">
+<head>
+  <meta charset="utf-8" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:;" />
+  <title>Azy Dagger</title>
+  <link rel="stylesheet" href="../design-tokens.css" />
+  <link rel="stylesheet" href="../styles.css" />
+  <link rel="stylesheet" href="themes.css" />
+  <link rel="stylesheet" href="dagger.css" />
+  <link rel="stylesheet" href="dagger-toolkit.css" />
+  <link rel="stylesheet" href="palette.css" />
+  <link rel="stylesheet" href="azy-foundation.css" />
+  <link rel="stylesheet" href="azy-skin.css" />
+</head>
+<body class="dagger-body">
+  <!-- Layering: one static SVG disc (painted once per layout) + small HTML layers that only ever
+       move by transform/opacity, so hover, pointer and every micro-animation stay on the
+       compositor. No CSS filters anywhere in the wheel. -->
+  <div class="dagger" id="dagger" aria-hidden="true">
+    <div class="dg-halo"></div>
+    <svg class="dagger-svg" viewBox="-230 -230 460 460" width="460" height="460">
+      <defs>
+        <linearGradient id="tkSheen" gradientUnits="userSpaceOnUse" x1="-150" y1="-200" x2="95" y2="175"><stop offset="0" stop-color="#fff" stop-opacity=".6" /><stop offset=".45" stop-color="#fff" stop-opacity=".09" /><stop offset="1" stop-color="#fff" stop-opacity="0" /></linearGradient>
+        <linearGradient id="tkRim" gradientUnits="userSpaceOnUse" x1="-140" y1="-140" x2="140" y2="140"><stop offset="0" stop-color="#fff" stop-opacity=".9" /><stop offset=".5" stop-color="#fff" stop-opacity=".14" /><stop offset="1" stop-color="#fff" stop-opacity=".6" /></linearGradient>
+        <radialGradient id="tkDisc"><stop offset=".6" stop-color="#fff" stop-opacity="0" /><stop offset="1" stop-color="#fff" stop-opacity=".08" /></radialGradient>
+      </defs>
+      <g id="tkTicks" class="tk-ticks"></g>
+      <circle class="tk-disc" r="179" />
+      <circle class="tk-disc2" r="179" />
+      <g id="sectors"></g>
+      <g id="sheens" class="tk-sheens"></g>
+      <g id="web" class="dagger-web" aria-hidden="true"></g>
+      <circle class="dagger-rim tk-ring" r="179" transform="rotate(-90)" />
+      <circle class="tk-dash" r="202" />
+      <path id="tkHl" class="tk-hl" d="" />
+      <circle class="dagger-hub-ring" r="66" />
+      <circle class="dagger-hub" r="60" />
+      <!-- Azy mark (no-script fallback; the sigil replaces it) -->
+      <path class="dagger-mark" d="M0 -22 L20 20 L11 20 L7.2 11 L-7.2 11 L-11 20 L-20 20 Z M0 -10.5 L-4.8 3 L4.8 3 Z" />
+    </svg>
+    <div class="dg-ticks"><svg viewBox="-230 -230 460 460"><circle r="217" class="dg-tick-a" /><circle r="217" class="dg-tick-b" /></svg></div>
+    <div class="dg-sheen"><svg viewBox="-230 -230 460 460"><defs><linearGradient id="dgSheen" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="currentColor" stop-opacity="0" /><stop offset="0.7" stop-color="currentColor" stop-opacity="0.9" /><stop offset="1" stop-color="currentColor" stop-opacity="0" /></linearGradient></defs><path d="M-148.5 -148.5 A210 210 0 0 1 148.5 -148.5" stroke="url(#dgSheen)" /></svg></div>
+    <div class="dg-wedge" id="wedge"></div>
+    <div class="dg-hubring"><svg viewBox="-80 -80 160 160"><circle r="72" /></svg></div>
+    <div class="dg-orbit"><i></i><i></i><i></i></div>
+    <div class="dg-hubcore"></div>
+    <div class="dg-pulse" id="pulse"></div>
+    <div class="dg-shock" id="shock"></div>
+    <div class="dagger-needle" id="needle"><i></i></div>
+    <div class="dg-trail" id="trail"></div>
+    <div class="dagger-dot" id="dot"></div>
+    <div class="dagger-sigil" id="hubSigil" aria-hidden="true"></div>
+    <div class="dg-hubname" id="hubName"></div>
+    <div class="dagger-labels" id="labels"></div>
+    <div class="tk-hub" id="tkHub"><b id="tkTitle">Azy</b><small id="tkSub"></small></div>
+    <div class="dagger-wheel-name" aria-hidden="true"></div>
+    <div class="dagger-caption" id="caption"><span id="captionText">Azy</span></div>
+  </div>
+  <script src="azy-theme-engine.js"></script>
+  <script src="azy-web.js"></script>
+  <script src="azy-undo.js"></script>
+    
+  <script src="dagger-renderer.js"></script>
+  <script src="azy-interactions.js"></script>
+</body>
+</html>

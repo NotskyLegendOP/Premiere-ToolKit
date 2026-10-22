@@ -1,0 +1,154 @@
+/* =====================================================================================
+   Azy activity — the "Applying… / Applied" feedback, as a compact corner toast.
+
+   Replaces the old centred processing card (full-window veil + big glass dialog + five
+   spinning rings). Work-in-progress now sits in the TOP-RIGHT corner of the window, out of
+   the way: a small spinner, the title, the preset/speed name, the live stage from Premiere,
+   a thin progress bar, and small Cancel / Minimize buttons. Nothing covers the UI.
+
+   • Same DOM + JS API as before (azy-wait.js) — only the presentation changes.
+   • The short app notices (#toastWrap: "Applied", "Saved"…) move to the same corner and
+     stack beneath the activity toast (azy-wait.js publishes its height as --azy-wait-h).
+   • Near-solid fill: legible over anything, no backdrop blur needed (blur is off in
+     Performance mode and in transparent windows, which is what made the old card unreadable).
+   • Motion = transform/opacity only (compositor); Performance mode shortens it, Reduced
+     motion removes it.
+   Loaded last (after azy-skin.css) in every window that shows it.
+   ===================================================================================== */
+
+:root { --azy-toast-top: 48px; --azy-toast-right: 10px; --azy-toast-w: 272px; --azy-wait-h: 0px; }
+body.speed-body, body.snap-body { --azy-toast-top: 56px; }
+
+/* ---- the activity toast ---------------------------------------------------------- */
+html body .azy-wait {
+  position: fixed; inset: auto; top: var(--azy-toast-top); right: var(--azy-toast-right); left: auto; bottom: auto;
+  z-index: 1000; display: block; width: var(--azy-toast-w); max-width: calc(100vw - 20px);
+  background: none; pointer-events: none;
+  opacity: 0; transform: translate3d(18px, 0, 0);
+  transition: opacity calc(160ms * var(--azy-speed-k, 1)) var(--azy-ease-out, ease-out), transform calc(220ms * var(--azy-speed-k, 1)) var(--azy-ease-out, cubic-bezier(.2, .8, .2, 1));
+}
+html body .azy-wait.in { opacity: 1; transform: none; }
+html body .azy-wait.out { opacity: 0; transform: translate3d(22px, 0, 0); transition-duration: calc(180ms * var(--azy-speed-k, 1)); }
+
+html[data-theme] body .azy-wait-card,
+html body .azy-wait-card {
+  position: relative; width: 100%; display: block; pointer-events: auto;
+  padding: 10px 10px 10px 12px; border-radius: 12px;
+  border: 1px solid rgba(var(--hue-rgb, 214, 40, 63), 0.42);
+  background: color-mix(in srgb, var(--azy-depth-1, #0b0b0b) 94%, transparent);
+  backdrop-filter: none; -webkit-backdrop-filter: none;
+  box-shadow: 0 10px 28px -8px rgba(0, 0, 0, 0.7), inset 0 1px 0 0 rgba(var(--hue-rgb, 214, 40, 63), 0.14);
+  overflow: hidden; transform: none; animation: none;
+  color: var(--azy-text-1, #f2f2f2); text-shadow: none;
+}
+/* one thin accent line runs along the top edge while working (a transform, not a repaint) */
+html body .azy-wait-card::before {
+  content: ''; position: absolute; left: 0; top: 0; width: 40%; height: 2px; inset: 0 auto auto 0;
+  background: linear-gradient(90deg, transparent, rgb(var(--hue-rgb, 214, 40, 63)), transparent);
+  animation: azyActRun calc(1.25s * var(--azy-speed-k, 1)) cubic-bezier(.45, .05, .55, .95) infinite; clip-path: none; opacity: 0.9;
+}
+html body .azy-wait-card::after { content: none; display: none; animation: none; }
+html body .azy-wait.done .azy-wait-card::before,
+html body .azy-wait.failed .azy-wait-card::before { animation: none; opacity: 0; }
+@keyframes azyActRun { from { transform: translateX(-100%); } to { transform: translateX(250%); } }
+
+/* header: the brand text goes; the two small window buttons stay, top-right of the toast */
+html body .azy-wait-top { position: absolute; top: 6px; right: 6px; padding: 0; border: 0; z-index: 2; }
+html body .azy-wait-brand { display: none; }
+html body .azy-wait-win { gap: 2px; margin: 0; }
+html body .azy-wait-win button {
+  width: 22px; height: 20px; padding: 0; border-radius: 6px; border: 0;
+  background: transparent; color: var(--azy-text-3, #8b8b8b); font-size: 11px; line-height: 20px; box-shadow: none;
+}
+html body .azy-wait-win button:hover { background: rgba(var(--hue-rgb, 214, 40, 63), 0.16); color: var(--azy-text-1, #fff); }
+
+html body .azy-wait-body {
+  display: grid; grid-template-columns: 24px minmax(0, 1fr); column-gap: 10px; row-gap: 1px;
+  align-items: center; padding: 0; text-align: left;
+}
+/* spinner: one ring (the old five-ring orbit is gone) — rotates on the compositor */
+html body .azy-wait-orbit { grid-row: 1 / span 3; grid-column: 1; position: relative; width: 22px; height: 22px; margin: 0; align-self: start; margin-top: 2px; }
+html body .azy-wait-orbit span { display: none; }
+html body .azy-wait-orbit span:first-child {
+  display: block; position: absolute; inset: 0; border-radius: 50%;
+  border: 2px solid rgba(var(--hue-rgb, 214, 40, 63), 0.22); border-top-color: rgb(var(--hue-rgb, 214, 40, 63));
+  animation: azyActSpin calc(0.8s * var(--azy-speed-k, 1)) linear infinite; box-shadow: none; filter: none;
+}
+@keyframes azyActSpin { to { transform: rotate(360deg); } }
+/* done → a check; failed → an exclamation (the ring stops) */
+html body .azy-wait.done .azy-wait-orbit span:first-child,
+html body .azy-wait.failed .azy-wait-orbit span:first-child { animation: none; border-color: rgb(var(--hue-rgb, 214, 40, 63)); background: rgba(var(--hue-rgb, 214, 40, 63), 0.16); }
+html body .azy-wait.failed .azy-wait-orbit span:first-child { border-color: var(--azy-err, #ff6b6b); background: rgba(255, 107, 107, 0.14); }
+html body .azy-wait.done .azy-wait-orbit::after,
+html body .azy-wait.failed .azy-wait-orbit::after {
+  content: '\2713'; position: absolute; inset: 0; display: grid; place-items: center;
+  font-size: 12px; font-weight: 700; color: var(--azy-text-1, #fff); animation: azyActPop calc(260ms * var(--azy-speed-k, 1)) var(--azy-ease-out, ease-out) both;
+}
+html body .azy-wait.failed .azy-wait-orbit::after { content: '!'; }
+@keyframes azyActPop { from { transform: scale(0.4); opacity: 0; } to { transform: none; opacity: 1; } }
+
+html body .azy-wait-title {
+  grid-column: 2; margin: 0 44px 0 0; font-size: 12px; font-weight: 650; line-height: 1.3; letter-spacing: 0;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-shadow: none; animation: none; color: var(--azy-text-1, #fff);
+}
+html body .azy-wait-title::before, html body .azy-wait-title::after { content: none; display: none; }
+html body .azy-wait-name {
+  grid-column: 2; margin: 0 8px 0 0; font-size: 11px; font-weight: 550; line-height: 1.3;
+  color: rgb(var(--hue-rgb, 214, 40, 63)); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-shadow: none;
+}
+html body .azy-wait-stage { grid-column: 2; margin: 0; min-height: 0; font-size: 10.5px; line-height: 1.35; color: var(--azy-text-2, #bababa); text-shadow: none; }
+html body .azy-wait-stage-text { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; }
+html body .azy-wait-stage-text.in { animation: azyActFade calc(180ms * var(--azy-speed-k, 1)) var(--azy-ease-out, ease-out) both; }
+@keyframes azyActFade { from { opacity: 0; transform: translateY(2px); } to { opacity: 1; transform: none; } }
+html body .azy-wait-bar { grid-column: 1 / -1; width: 100%; height: 2px; margin: 8px 0 0; border-radius: 2px; background: rgba(var(--hue-rgb, 214, 40, 63), 0.16); }
+html body .azy-wait-bar-fill { background: rgb(var(--hue-rgb, 214, 40, 63)); box-shadow: none; }
+html body .azy-wait-steps { display: none; }
+html body .azy-wait-actions { grid-column: 2; display: flex; justify-content: flex-start; gap: 6px; margin: 7px 0 0; padding: 0; }
+html body .azy-wait-actions button {
+  min-height: 0; height: 22px; padding: 0 10px; border-radius: 6px; font-size: 11px; font-weight: 550; line-height: 20px;
+  border: 1px solid rgba(var(--hue-rgb, 214, 40, 63), 0.32); background: rgba(var(--hue-rgb, 214, 40, 63), 0.08);
+  color: var(--azy-text-1, #fff); box-shadow: none; text-shadow: none; background-image: none; transform: none;
+}
+html body .azy-wait-actions button:hover:not(:disabled) { border-color: rgba(var(--hue-rgb, 214, 40, 63), 0.6); background: rgba(var(--hue-rgb, 214, 40, 63), 0.18); }
+html body .azy-wait-actions .azy-wait-min2 i { display: none; }
+html body .azy-wait.done .azy-wait-actions, html body .azy-wait.failed .azy-wait-actions { display: none; }
+
+/* minimized: a small pill in the same corner — spinner + title only */
+html body .azy-wait--mini { width: auto; max-width: 200px; }
+html body .azy-wait--mini .azy-wait-card { padding: 6px 30px 6px 8px; border-radius: 999px; }
+html body .azy-wait--mini .azy-wait-card::before { display: none; }
+html body .azy-wait--mini .azy-wait-body { grid-template-columns: 18px minmax(0, 1fr); column-gap: 7px; }
+html body .azy-wait--mini .azy-wait-orbit { width: 16px; height: 16px; grid-row: 1; margin-top: 0; }
+html body .azy-wait--mini .azy-wait-title { margin: 0; font-size: 11px; }
+html body .azy-wait--mini :is(.azy-wait-name, .azy-wait-stage, .azy-wait-bar, .azy-wait-actions) { display: none; }
+html body .azy-wait--mini .azy-wait-top { top: 50%; right: 4px; transform: translateY(-50%); }
+html body .azy-wait--mini .azy-wait-close { display: none; }
+html body .azy-wait--mini, html body .azy-wait--mini.in { inset: auto; top: var(--azy-toast-top); right: var(--azy-toast-right); }
+
+/* ---- short notices: same corner, stacked under the activity toast ------------------- */
+html body .toast-wrap {
+  inset: auto; top: calc(var(--azy-toast-top) + var(--azy-wait-h)); right: var(--azy-toast-right); left: auto; bottom: auto;
+  z-index: 999; align-items: flex-end; max-width: calc(100vw - 20px);
+  transition: top calc(200ms * var(--azy-speed-k, 1)) var(--azy-ease-out, ease-out);
+}
+html body .toast-wrap .toast {
+  max-width: min(300px, calc(100vw - 20px)); border-radius: 10px; padding: 7px 28px 7px 11px; font-size: 11.5px;
+  background: color-mix(in srgb, var(--azy-depth-1, #0b0b0b) 94%, transparent);
+  border: 1px solid rgba(var(--hue-rgb, 214, 40, 63), 0.32);
+  box-shadow: 0 8px 22px -8px rgba(0, 0, 0, 0.7); backdrop-filter: none; -webkit-backdrop-filter: none;
+  animation: azyToastIn calc(200ms * var(--azy-speed-k, 1)) var(--azy-ease-out, cubic-bezier(.2, .8, .2, 1)) both;
+}
+html body .toast-wrap .toast.out { animation: azyToastOut calc(180ms * var(--azy-speed-k, 1)) var(--azy-ease, ease) both; }
+@keyframes azyToastIn { from { opacity: 0; transform: translate3d(16px, 0, 0); } to { opacity: 1; transform: none; } }
+@keyframes azyToastOut { to { opacity: 0; transform: translate3d(18px, 0, 0); } }
+
+/* ---- quality modes ------------------------------------------------------------------- */
+html[data-perf="performance"] body .azy-wait { transition-duration: calc(90ms * var(--azy-speed-k, 1)); }
+html[data-perf="performance"] body .azy-wait-card::before { animation-duration: calc(1.6s * var(--azy-speed-k, 1)); }
+html[data-perf="performance"] body .toast-wrap .toast { animation-duration: calc(90ms * var(--azy-speed-k, 1)); }
+html[data-motion="reduced"] body :is(.azy-wait, .toast-wrap .toast, .azy-wait-stage-text.in) { transition: opacity calc(90ms * var(--azy-speed-k, 1)) linear; transform: none; animation-name: none; }
+html[data-motion="reduced"] body .azy-wait-card::before { animation: none; opacity: 0; }
+@media (prefers-reduced-motion: reduce) {
+  html body :is(.azy-wait, .toast-wrap .toast) { transform: none; transition: opacity calc(90ms * var(--azy-speed-k, 1)) linear; }
+  html body .azy-wait-card::before { animation: none; opacity: 0; }
+}

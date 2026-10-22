@@ -1,0 +1,1834 @@
+/* ---------- Presets ----------
+   Only what the Presets tab adds on top of styles.css: the Files | Presets switch,
+   the two panes it flips between, and three small badges on the shared card. Every
+   token comes from :root in styles.css; nothing here is a new colour. */
+
+/* The switch sits in the strip the grabber already owns, so it also moves the window. */
+.mode-row {
+  -webkit-app-region: drag;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0 12px 6px;
+  flex-shrink: 0;
+}
+
+.mode-tab {
+  -webkit-app-region: no-drag;
+  position: relative;
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--faint);
+  font-size: 11.5px;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  cursor: pointer;
+  transition: color calc(0.18s * var(--azy-speed-k, 1)) var(--ease), background-color calc(0.18s * var(--azy-speed-k, 1)) var(--ease),
+    border-color calc(0.18s * var(--azy-speed-k, 1)) var(--ease), transform calc(0.18s * var(--azy-speed-k, 1)) var(--spring);
+}
+
+.mode-tab:hover {
+  color: var(--text);
+  background: var(--raised);
+}
+
+.mode-tab:active {
+  transform: scale(0.96);
+}
+
+.mode-tab svg { flex: none; opacity: 0.8; transition: opacity calc(0.18s * var(--azy-speed-k, 1)) var(--ease), transform calc(0.22s * var(--azy-speed-k, 1)) var(--spring); }
+.mode-tab { display: inline-flex; align-items: center; gap: 6px; z-index: 1; }
+.mode-tab.active svg { opacity: 1; transform: scale(1.08); }
+/* Sliding indicator: one pill glides between workspaces (transform + width only, compositor-cheap). */
+.mode-pill {
+  position: absolute; left: 12px; top: 0; bottom: 6px; width: 0; opacity: 0;
+  border-radius: 999px; background: var(--raised-hi); border: 1px solid var(--line-hi);
+  transition: transform calc(0.26s * var(--azy-speed-k, 1)) var(--ease-dock), width calc(0.26s * var(--azy-speed-k, 1)) var(--ease-dock), opacity calc(0.2s * var(--azy-speed-k, 1)) var(--ease);
+  pointer-events: none;
+}
+.mode-pill.ready { opacity: 1; }
+.mode-row { position: relative; }
+.mode-tab.active {
+  color: var(--text);
+  background: transparent; /* the shared pill is the background */
+  border-color: transparent;
+  font-weight: 600;
+}
+
+/* A pane is a transparent column: the strip, toolbar, search row and grid inside it
+   lay out exactly as they did when they were direct children of .app. */
+.pane {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+
+.pane[hidden] {
+  display: none;
+}
+
+.thumb--preset {
+  color: var(--accent-3);
+  background: linear-gradient(160deg, rgba(235, 235, 235, 0.1), rgba(235, 235, 235, 0.02));
+}
+
+/* Star on a Premiere preset's tile — same shape and place as the video play badge. */
+.fav-badge {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  border-radius: 50%;
+  /* A grid can contain many stars; solid dark chips do not allocate blur surfaces per card. */
+  background: rgba(5, 5, 5, 0.9);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--faint);
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity calc(0.18s * var(--azy-speed-k, 1)) var(--ease), transform calc(0.2s * var(--azy-speed-k, 1)) var(--spring),
+    color calc(0.18s * var(--azy-speed-k, 1)) var(--ease), box-shadow calc(0.2s * var(--azy-speed-k, 1)) var(--ease);
+}
+
+.file-card:hover .fav-badge,
+.fav-badge.on {
+  opacity: 1;
+}
+
+.fav-badge:hover {
+  color: var(--accent);
+  transform: scale(1.18);
+  border-color: rgba(255, 255, 255, 0.36);
+  box-shadow: 0 0 12px -2px rgba(255, 255, 255, 0.61);
+}
+
+.fav-badge.on {
+  color: var(--accent);
+  border-color: rgba(255, 255, 255, 0.36);
+}
+
+/* How many presets a folder or bin holds. */
+.count-badge {
+  position: absolute;
+  bottom: 5px;
+  right: 6px;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: rgba(5, 5, 5, 0.72);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  color: var(--dim);
+  font-size: 9.5px;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+/* Clicking a preset applies it, so the card reads as a button rather than a handle. */
+.preset-card {
+  cursor: pointer;
+}
+
+.preset-card.applying {
+  pointer-events: none;
+}
+
+.preset-card.applying .thumb {
+  border-color: rgba(255, 255, 255, 0.4);
+  animation: pulse calc(0.9s * var(--azy-speed-k, 1)) var(--ease) infinite alternate;
+}
+
+/* The footer hint doubles as the Premiere connection line on the Presets tab. */
+.status-hint.is-ok {
+  color: var(--dim);
+}
+
+.status-hint.is-warn {
+  color: var(--accent-2);
+  cursor: pointer;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .preset-card.applying .thumb {
+    animation: none;
+  }
+}
+
+/* ---------- Settings workspace ----------
+   A slim category rail on the left, one group of rows on the right. Rows on the same glass
+   as the toolbar. The rail collapses to a top strip when the window is narrow. */
+.pane--settings { display: flex; flex-direction: row; min-height: 0; }
+.settings-rail {
+  display: flex; flex-direction: column; gap: 4px; padding: 10px 8px 10px 10px; flex: none; width: 108px;
+  border-right: 1px solid var(--line);
+}
+.settings-cat {
+  text-align: left; padding: 7px 10px; border-radius: var(--radius-sm); border: 1px solid transparent;
+  background: transparent; color: var(--dim); font-size: 11.5px; font-weight: 500; cursor: pointer;
+  transition: color calc(0.16s * var(--azy-speed-k, 1)) var(--ease), background-color calc(0.16s * var(--azy-speed-k, 1)) var(--ease), border-color calc(0.16s * var(--azy-speed-k, 1)) var(--ease), transform calc(0.18s * var(--azy-speed-k, 1)) var(--spring);
+}
+.settings-cat:hover { color: var(--text); background: var(--raised); }
+.settings-cat:active { transform: scale(0.97); }
+.settings-cat.active { color: var(--text); background: var(--raised-hi); border-color: var(--line-hi); font-weight: 600; }
+.settings-body { flex: 1; min-width: 0; }
+.settings-group { display: flex; flex-direction: column; gap: 8px; }
+.settings-group[hidden] { display: none; }
+/* Segmented controls drop under the text when the body is narrow instead of squeezing it. */
+.settings-body .snap-setting { flex-wrap: wrap; }
+.settings-body .snap-setting > .snap-seg, .settings-body .snap-setting > .snap-keys { margin-left: auto; }
+/* Colour choices have four labels, so give that segmented control a whole row rather
+   than allowing a narrow settings rail to push its final option under the scrollbar. */
+.settings-body .theme-seg {
+  flex: 0 1 100%;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  margin-left: 0;
+  flex-wrap: wrap;
+  justify-content: flex-start;
+}
+.settings-body { overflow-x: hidden; }
+.settings-group.enter { animation: paneIn calc(0.26s * var(--azy-speed-k, 1)) var(--ease-dock); }
+.settings-h { margin: 6px 2px 0; font-size: 10px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--faint); }
+.settings-h:first-child { margin-top: 0; }
+@media (max-width: 420px) {
+  .pane--settings { flex-direction: column; }
+  .settings-rail { flex-direction: row; width: auto; border-right: 0; border-bottom: 1px solid var(--line); padding: 8px 10px; overflow-x: auto; }
+  .settings-cat { white-space: nowrap; }
+}
+.snap-settings {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 8px 10px 12px;
+  overflow-y: auto;
+}
+/* Workspace header (Flow): title + the one line that says what the workspace will do right now. */
+.ws-head { display: flex; align-items: center; gap: 10px; padding: 10px 12px 4px; flex-shrink: 0; }
+.ws-head-title { font-size: 13px; font-weight: 700; letter-spacing: 0.01em; color: var(--text); }
+.ws-head-sub { margin-top: 1px; font-size: 11px; line-height: 1.4; color: var(--dim); transition: color calc(0.2s * var(--azy-speed-k, 1)) var(--ease); }
+.ws-head.is-ok .ws-head-sub { color: var(--text); }
+.ws-head.is-warn .ws-head-sub { color: var(--dim); }
+.flow-toolbar .flow-target { flex: 0 0 auto; min-width: 0; }
+.flow-toolbar .azy-scope-slot { margin-right: auto; }
+.dagger-binds { display: flex; flex-direction: column; gap: 8px; }
+.dagger-bind .snap-keycap { min-width: 150px; }
+
+.snap-setting {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: var(--radius);
+  background: var(--glass);
+  border: 1px solid var(--line);
+  animation: riseIn calc(0.3s * var(--azy-speed-k, 1)) var(--ease) both;
+}
+
+.snap-setting--toggle {
+  cursor: pointer;
+}
+
+.snap-setting-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.snap-setting-title {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.snap-setting-desc {
+  margin-top: 2px;
+  font-size: 11px;
+  line-height: 1.45;
+  color: var(--dim);
+}
+
+.snap-setting-note {
+  padding: 0 14px;
+  margin-top: -4px;
+  font-size: 10.5px;
+  color: var(--faint);
+  min-height: 14px;
+}
+
+.snap-setting-note.warn {
+  color: var(--text);
+}
+
+.snap-keys {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.snap-keycap {
+  -webkit-app-region: no-drag;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  padding: 6px 12px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--line-hi);
+  background: var(--raised);
+  color: var(--text);
+  cursor: pointer;
+  min-width: 96px;
+  transition: border-color calc(0.18s * var(--azy-speed-k, 1)) var(--ease), box-shadow calc(0.18s * var(--azy-speed-k, 1)) var(--ease), background-color calc(0.18s * var(--azy-speed-k, 1)) var(--ease);
+}
+
+.snap-keycap:hover {
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+.snap-keycap.recording {
+  color: #060606;
+  background: linear-gradient(135deg, var(--accent), var(--accent-3) 55%, var(--accent-2));
+  border-color: transparent;
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.12);
+  animation: snapRecord calc(1.1s * var(--azy-speed-k, 1)) ease-in-out infinite;
+}
+
+@keyframes snapRecord {
+  0%, 100% { box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.1); }
+  50% { box-shadow: 0 0 0 5px rgba(255, 255, 255, 0.2); }
+}
+
+/* Monochrome switch. */
+.snap-switch {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 34px;
+  height: 20px;
+  border-radius: 999px;
+  background: var(--raised-hi);
+  border: 1px solid var(--line-hi);
+  position: relative;
+  cursor: pointer;
+  flex-shrink: 0;
+  margin: 0;
+  transition: background-color calc(0.2s * var(--azy-speed-k, 1)) var(--ease), border-color calc(0.2s * var(--azy-speed-k, 1)) var(--ease);
+}
+
+.snap-switch::after {
+  content: "";
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--dim);
+  transition: transform calc(0.22s * var(--azy-speed-k, 1)) var(--spring), background-color calc(0.2s * var(--azy-speed-k, 1)) var(--ease);
+}
+
+.snap-switch:checked {
+  background: var(--accent);
+  border-color: transparent;
+}
+
+.snap-switch:checked::after {
+  background: #060606;
+  transform: translateX(14px);
+}
+
+/* ---------- Flow tab ----------
+   Keyframe easing presets on the shared .file-grid. Cards are the same .file-card /
+   .thumb--preset as the Presets tab; only the glyph, the group headers and the small
+   custom-ease editor are new. */
+.flow-toolbar {
+  gap: 8px;
+}
+
+.flow-target {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 4px;
+  font-size: 11.5px;
+  color: var(--dim);
+}
+
+.flow-target-text {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.flow-target-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--faint);
+  flex-shrink: 0;
+  transition: background-color calc(0.2s * var(--azy-speed-k, 1)) var(--ease), box-shadow calc(0.2s * var(--azy-speed-k, 1)) var(--ease);
+}
+
+.flow-target.is-ok .flow-target-dot {
+  background: var(--accent);
+  box-shadow: 0 0 8px rgba(255, 255, 255, 0.7);
+}
+
+.flow-target.is-ok {
+  color: var(--text);
+}
+
+.flow-target.is-warn .flow-target-dot {
+  background: var(--accent-2);
+  animation: snapPulse calc(1.2s * var(--azy-speed-k, 1)) ease-in-out infinite;
+}
+
+.flow-grid.is-editing {
+  flex: 0 1 auto;
+  max-height: 34%;
+}
+
+.flow-group {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 2px 0;
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--faint);
+}
+
+.flow-group .n {
+  padding: 0 5px;
+  border-radius: 4px;
+  background: var(--raised);
+  color: var(--dim);
+  font-weight: 500;
+  letter-spacing: 0;
+}
+
+.thumb--flow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.flow-glyph {
+  color: var(--accent-3);
+  opacity: 0.9;
+  transition: transform calc(0.25s * var(--azy-speed-k, 1)) var(--spring);
+}
+
+.file-card:hover .flow-glyph {
+  transform: scale(1.1);
+}
+
+.flow-edit-badge {
+  cursor: pointer;
+  font-size: 9.5px;
+  letter-spacing: 0.04em;
+  opacity: 0;
+  transition: opacity calc(0.16s * var(--azy-speed-k, 1)) var(--ease), color calc(0.16s * var(--azy-speed-k, 1)) var(--ease);
+}
+
+.file-card:hover .flow-edit-badge {
+  opacity: 1;
+}
+
+.flow-edit-badge:hover {
+  color: var(--text);
+}
+
+/* ----- custom ease editor ----- */
+.flow-editor {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  margin: 0 10px 10px;
+  padding: 10px 12px 12px;
+  border-radius: var(--radius);
+  background: var(--glass);
+  border: 1px solid var(--line-hi);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  animation: riseIn calc(0.3s * var(--azy-speed-k, 1)) var(--ease) both;
+}
+
+.flow-editor[hidden] {
+  display: none;
+}
+
+.flow-editor-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.flow-name {
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.flow-editor-row {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.flow-editor-toggle {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  column-gap: 10px;
+  align-items: center;
+  cursor: pointer;
+}
+
+.flow-editor-toggle .flow-editor-hint {
+  grid-column: 2;
+}
+
+.flow-editor-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.flow-editor-hint {
+  font-size: 10.5px;
+  line-height: 1.45;
+  color: var(--dim);
+}
+
+.flow-interp-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.flow-interp-grid label,
+.flow-curve-nums label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 10.5px;
+  color: var(--dim);
+}
+
+.flow-select,
+.flow-curve-nums input {
+  font: inherit;
+  font-size: 12px;
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  padding: 6px 8px;
+  outline: none;
+  transition: border-color calc(0.18s * var(--azy-speed-k, 1)) var(--ease), box-shadow calc(0.18s * var(--azy-speed-k, 1)) var(--ease);
+}
+
+.flow-select {
+  appearance: none;
+  -webkit-appearance: none;
+  cursor: pointer;
+}
+
+.flow-select option {
+  background: #060606;
+  color: var(--text);
+}
+
+.flow-select:focus,
+.flow-curve-nums input:focus {
+  border-color: rgba(255, 255, 255, 0.43);
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.07);
+}
+
+.flow-curve {
+  display: grid;
+  grid-template-columns: minmax(150px, 46%) 1fr;
+  gap: 12px;
+  align-items: stretch;
+}
+
+.flow-graph-wrap {
+  position: relative;
+  padding: 0 0 14px 14px;
+}
+
+.flow-axis {
+  position: absolute;
+  font-size: 9px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--faint);
+}
+
+.flow-axis-y {
+  left: 0;
+  top: 50%;
+  transform: translate(-40%, -50%) rotate(-90deg);
+}
+
+.flow-axis-x {
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.flow-graph {
+  display: block;
+  width: 100%;
+  aspect-ratio: 1;
+  border-radius: var(--radius-sm);
+  background: rgba(255, 255, 255, 0.035);
+  border: 1px solid var(--line);
+  overflow: visible;
+  touch-action: none;
+  cursor: crosshair;
+}
+
+.flow-graph-grid path {
+  stroke: rgba(255, 255, 255, 0.07);
+  stroke-width: 0.6;
+  fill: none;
+  vector-effect: non-scaling-stroke;
+}
+
+.flow-graph-diag {
+  stroke: rgba(255, 255, 255, 0.12);
+  stroke-width: 1;
+  stroke-dasharray: 3 3;
+  fill: none;
+  vector-effect: non-scaling-stroke;
+}
+
+.flow-graph-samples {
+  stroke: none;
+  fill: rgba(255, 255, 255, 0.5);
+}
+
+.flow-curve-path {
+  stroke: var(--accent);
+  stroke-width: 2.4;
+  fill: none;
+  stroke-linecap: round;
+  vector-effect: non-scaling-stroke;
+}
+
+.flow-handle-line {
+  stroke: var(--accent-2);
+  stroke-width: 1.4;
+  vector-effect: non-scaling-stroke;
+  opacity: 0.85;
+}
+
+.flow-anchor {
+  fill: var(--accent-2);
+  vector-effect: non-scaling-stroke;
+}
+
+.flow-handle {
+  fill: var(--accent-2);
+  stroke: rgba(0, 0, 0, 0.6);
+  stroke-width: 1.5;
+  cursor: grab;
+  transition: r calc(0.12s * var(--azy-speed-k, 1)) var(--ease);
+  vector-effect: non-scaling-stroke;
+}
+
+.flow-handle:hover,
+.flow-handle.dragging {
+  r: 6;
+  cursor: grabbing;
+}
+
+.flow-curve-side {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+.flow-curve-lib {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+}
+
+.flow-curve-lib button {
+  aspect-ratio: 1;
+  padding: 0;
+  border-radius: var(--radius-sm);
+  background: var(--raised);
+  border: 1px solid transparent;
+  color: var(--text);
+  cursor: pointer;
+  transition: border-color calc(0.16s * var(--azy-speed-k, 1)) var(--ease), background-color calc(0.16s * var(--azy-speed-k, 1)) var(--ease), transform calc(0.2s * var(--azy-speed-k, 1)) var(--spring);
+}
+
+.flow-curve-lib button svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.flow-curve-lib button:hover {
+  background: var(--raised-hi);
+  transform: translateY(-1px);
+}
+
+.flow-curve-lib button.active {
+  border-color: var(--accent-2);
+}
+
+.flow-curve-lib .lib-curve {
+  stroke: currentColor;
+  stroke-width: 2;
+  fill: none;
+  stroke-linecap: round;
+  vector-effect: non-scaling-stroke;
+}
+
+.flow-curve-lib .lib-handle {
+  stroke: var(--accent-2);
+  stroke-width: 1.2;
+  vector-effect: non-scaling-stroke;
+}
+
+.flow-curve-nums {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 6px;
+}
+
+.flow-curve-nums label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 10.5px;
+  color: var(--dim);
+}
+
+.flow-curve-nums input {
+  width: 100%;
+  min-width: 0;
+  padding: 5px 6px;
+  -moz-appearance: textfield;
+}
+
+.flow-curve-nums input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+}
+
+.flow-advanced {
+  border-top: 1px solid var(--line);
+  padding-top: 8px;
+}
+
+.flow-advanced summary {
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text);
+  list-style: none;
+  display: flex;
+  gap: 8px;
+  align-items: baseline;
+}
+
+.flow-advanced summary::-webkit-details-marker {
+  display: none;
+}
+
+.flow-advanced summary::before {
+  content: '';
+  display: inline-block;
+  width: 5px;
+  height: 5px;
+  border-right: 1.5px solid var(--dim);
+  border-bottom: 1.5px solid var(--dim);
+  transform: rotate(-45deg);
+  margin-right: 2px;
+  transition: transform calc(0.18s * var(--azy-speed-k, 1)) var(--ease);
+}
+
+.flow-advanced[open] summary::before {
+  transform: rotate(45deg);
+}
+
+.flow-advanced > *:not(summary) {
+  margin-top: 8px;
+}
+
+.flow-editor-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-top: 2px;
+}
+
+.flow-graph.is-off .flow-curve-path,
+.flow-graph.is-off .flow-handle,
+.flow-graph.is-off .flow-handle-line {
+  opacity: 0.3;
+}
+
+/* ── Speed control (shared by Presets + Flow toolbars) ─────────────────────── */
+.azy-speed-slot {
+  display: flex;
+  align-items: center;
+  flex: 0 1 auto;
+  min-width: 0;
+}
+
+.azy-speed {
+  --azy-speed-pos: 50%;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  height: 26px;
+  padding: 0 4px 0 9px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--raised);
+  color: var(--dim);
+  font-size: 11px;
+  user-select: none;
+  transition: border-color calc(0.16s * var(--azy-speed-k, 1)) var(--ease), background-color calc(0.16s * var(--azy-speed-k, 1)) var(--ease), opacity calc(0.16s * var(--azy-speed-k, 1)) var(--ease);
+}
+
+.azy-speed:hover,
+.azy-speed:focus-within {
+  border-color: var(--line-hi);
+  background: var(--raised-hi);
+}
+
+.azy-speed.is-busy {
+  opacity: 0.55;
+  pointer-events: none;
+}
+
+.azy-speed-label {
+  margin-right: 3px;
+  letter-spacing: 0.02em;
+}
+
+.azy-speed-step {
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  border: 0;
+  border-radius: 5px;
+  background: transparent;
+  color: var(--dim);
+  font: inherit;
+  font-size: 13px;
+  line-height: 1;
+  cursor: pointer;
+  transition: background-color calc(0.14s * var(--azy-speed-k, 1)) var(--ease), color calc(0.14s * var(--azy-speed-k, 1)) var(--ease), transform calc(0.14s * var(--azy-speed-k, 1)) var(--ease);
+}
+
+.azy-speed-step:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--text);
+}
+
+.azy-speed-step:active:not(:disabled) {
+  transform: scale(0.9);
+}
+
+.azy-speed-range {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 92px;
+  height: 16px;
+  margin: 0 2px;
+  background: transparent;
+  cursor: ew-resize;
+}
+
+.azy-speed-range::-webkit-slider-runnable-track {
+  height: 2px;
+  border-radius: 2px;
+  /* filled from the 100% centre mark towards the thumb */
+  background:
+    linear-gradient(90deg, transparent 0, transparent calc(50% - 1px), var(--accent-2) calc(50% - 1px), var(--accent-2) calc(50% + 1px), transparent calc(50% + 1px)),
+    linear-gradient(90deg, var(--line-hi) 0, var(--line-hi) min(50%, var(--azy-speed-pos)), var(--accent-2) min(50%, var(--azy-speed-pos)), var(--accent-2) max(50%, var(--azy-speed-pos)), var(--line-hi) max(50%, var(--azy-speed-pos)), var(--line-hi) 100%);
+}
+
+.azy-speed-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 11px;
+  height: 11px;
+  margin-top: -4.5px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.9);
+  transition: transform calc(0.14s * var(--azy-speed-k, 1)) var(--ease), box-shadow calc(0.14s * var(--azy-speed-k, 1)) var(--ease);
+}
+
+.azy-speed-range:hover::-webkit-slider-thumb {
+  transform: scale(1.15);
+}
+
+.azy-speed-range:active::-webkit-slider-thumb {
+  transform: scale(1.3);
+  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.9), 0 0 0 5px rgba(255, 255, 255, 0.12);
+}
+
+.azy-speed-range:focus-visible {
+  outline: none;
+}
+
+.azy-speed-range:focus-visible::-webkit-slider-thumb {
+  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.9), 0 0 0 4px var(--line-hi);
+}
+
+.azy-speed-value,
+.azy-speed-edit {
+  min-width: 44px;
+  height: 20px;
+  padding: 0 5px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  font-size: 11px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  cursor: text;
+  transition: background-color calc(0.14s * var(--azy-speed-k, 1)) var(--ease), border-color calc(0.14s * var(--azy-speed-k, 1)) var(--ease), color calc(0.14s * var(--azy-speed-k, 1)) var(--ease), transform calc(0.14s * var(--azy-speed-k, 1)) var(--ease);
+}
+
+.azy-speed-value:hover:not(:disabled) {
+  border-color: var(--line);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.azy-speed.is-default .azy-speed-value {
+  color: var(--dim);
+  font-weight: 500;
+}
+
+.azy-speed-value.bump {
+  transform: scale(1.08);
+}
+
+.azy-speed-edit {
+  border-color: var(--line-hi);
+  background: var(--glass-strong);
+  outline: none;
+}
+
+.azy-speed-reset {
+  width: 0;
+  height: 18px;
+  padding: 0;
+  border: 0;
+  border-radius: 5px;
+  overflow: hidden;
+  background: transparent;
+  color: var(--dim);
+  font: inherit;
+  font-size: 12px;
+  line-height: 1;
+  opacity: 0;
+  cursor: pointer;
+  transition: width calc(0.16s * var(--azy-speed-k, 1)) var(--ease), opacity calc(0.16s * var(--azy-speed-k, 1)) var(--ease), color calc(0.14s * var(--azy-speed-k, 1)) var(--ease), background-color calc(0.14s * var(--azy-speed-k, 1)) var(--ease);
+}
+
+.azy-speed:not(.is-default) .azy-speed-reset {
+  width: 18px;
+  opacity: 1;
+}
+
+.azy-speed-reset:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--text);
+}
+
+@media (max-width: 460px) {
+  .azy-speed-label { display: none; }
+  .azy-speed-range { width: 64px; }
+}
+
+/* ── Smoother apply feedback (Presets + Flow cards) ─────────────────────────── */
+.preset-card {
+  transition: transform calc(0.16s * var(--azy-speed-k, 1)) var(--ease), opacity calc(0.16s * var(--azy-speed-k, 1)) var(--ease);
+}
+
+.preset-card:active:not(.applying) {
+  transform: scale(0.985);
+}
+
+.preset-card.applying {
+  opacity: 0.85;
+}
+
+.preset-card.applying .thumb {
+  position: relative;
+  overflow: hidden;
+}
+
+.preset-card.applying .thumb::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(100deg, transparent 20%, rgba(255, 255, 255, 0.14) 50%, transparent 80%);
+  transform: translateX(-100%);
+  animation: azy-shimmer calc(1.1s * var(--azy-speed-k, 1)) var(--ease) infinite;
+}
+
+.preset-card.done .thumb {
+  border-color: rgba(255, 255, 255, 0.55);
+  transition: border-color calc(0.5s * var(--azy-speed-k, 1)) var(--ease);
+}
+
+.preset-card.failed .thumb {
+  animation: azy-shake calc(0.32s * var(--azy-speed-k, 1)) var(--ease);
+}
+
+@keyframes azy-shimmer {
+  to { transform: translateX(100%); }
+}
+
+@keyframes azy-shake {
+  20% { transform: translateX(-3px); }
+  45% { transform: translateX(3px); }
+  70% { transform: translateX(-2px); }
+  100% { transform: translateX(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .preset-card.applying .thumb::after,
+  .preset-card.failed .thumb { animation: none; }
+  .azy-speed-value.bump { transform: none; }
+}
+
+/* ── Wait / processing overlay (shared) ───────────────────────────────────────
+   Compact, mostly-transparent glass card. Five rings, five rotation animations,
+   a glitch sweep on the card and an RGB-split flicker on the title. Minimize
+   collapses everything into a corner pill that never blocks the UI. */
+.azy-wait {
+  position: absolute;
+  inset: 0;
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(8, 8, 8, 0.3);
+  opacity: 0;
+  transition: opacity calc(0.2s * var(--azy-speed-k, 1)) var(--ease);
+}
+
+.azy-wait.in { opacity: 1; }
+.azy-wait.out { opacity: 0; }
+
+/* Reference-style glass dialog: glowing gradient rim, light streaks, brand bar with
+   minimize + hide, orbit ring, big title, operation name, live stage, Cancel + Minimize. */
+.azy-wait-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: min(432px, calc(100vw - 48px));
+  border: 1px solid var(--azy-accent-border, rgba(var(--hue-rgb, 214, 40, 63), 0.55));
+  border-radius: 24px;
+  background: linear-gradient(155deg, var(--glass-bg, rgba(33, 33, 33, 0.55)), rgba(10, 10, 10, 0.62) 62%);
+  backdrop-filter: blur(18px) saturate(1.25);
+  box-shadow:
+    0 0 0 1px rgba(var(--hue-rgb, 214, 40, 63), 0.22),
+    0 0 44px rgba(var(--azy-glow-rgb-user, var(--hue-rgb, 214, 40, 63)), calc(0.34 * var(--azy-glow-k, 1))),
+    0 26px 64px rgba(0, 0, 0, 0.55);
+  overflow: hidden;
+  transform: translateY(8px) scale(0.96);
+  transition: transform calc(0.24s * var(--azy-speed-k, 1)) var(--ease-dock);
+}
+
+.azy-wait.in .azy-wait-card { transform: none; }
+
+/* diagonal light streaks drifting over the glass */
+.azy-wait-card::before {
+  content: '';
+  position: absolute;
+  inset: -60% -30%;
+  background: linear-gradient(115deg, transparent 44%, rgba(var(--hue-rgb, 214, 40, 63), 0.14) 50%, transparent 56%);
+  animation: azy-wait-sheen calc(7s * var(--azy-speed-k, 1)) linear infinite;
+  pointer-events: none;
+}
+
+/* glitch sweep: a thin scanline slice jumps across the card */
+.azy-wait-card::after {
+  content: '';
+  position: absolute;
+  left: 0; right: 0; top: 0;
+  height: 34%;
+  background: linear-gradient(180deg, rgba(var(--hue-rgb, 214, 40, 63), 0.10), transparent 80%);
+  clip-path: inset(0 0 62% 0);
+  animation: azy-glitch-sweep calc(2.6s * var(--azy-speed-k, 1)) steps(12) infinite;
+  pointer-events: none;
+}
+
+.azy-wait-top {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 13px 16px 11px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.azy-wait-brand { font-size: 11px; font-weight: 650; letter-spacing: 0.38em; color: rgb(var(--hue-rgb, 214, 40, 63)); }
+
+.azy-wait-win { margin-left: auto; display: flex; gap: 8px; }
+
+.azy-wait-win button {
+  width: 32px;
+  height: 28px;
+  border-radius: 9px;
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  background: rgba(255, 255, 255, 0.05);
+  color: #d3d3d3;
+  font: inherit;
+  font-size: 13px;
+  line-height: 1;
+  cursor: pointer;
+}
+.azy-wait-win button:hover { background: rgba(var(--hue-rgb, 214, 40, 63), 0.18); color: var(--text); }
+
+.azy-wait-body { display: flex; flex-direction: column; gap: 10px; padding: 20px 24px 18px; }
+
+.azy-wait-orbit { position: relative; width: 74px; height: 74px; flex: none; margin-bottom: 4px; }
+
+.azy-wait-orbit span {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  border-top-color: var(--hue);
+  border-right-color: rgba(var(--hue-rgb), 0.35);
+  animation: azy-orbit calc(1.05s * var(--azy-speed-k, 1)) linear infinite;
+}
+.azy-wait-orbit span:nth-child(2) { inset: 5px; border-top-color: color-mix(in srgb, rgb(var(--hue-rgb, 214, 40, 63)) 65%, #fff); border-right-color: transparent; animation: azy-orbit-rev calc(0.8s * var(--azy-speed-k, 1)) linear infinite; }
+.azy-wait-orbit span:nth-child(3) { inset: 10px; border-width: 1.6px; border-style: dashed; border-color: rgba(var(--hue-rgb), 0.55); border-bottom-color: transparent; animation: azy-orbit-dash calc(1.7s * var(--azy-speed-k, 1)) cubic-bezier(0.6, 0.1, 0.3, 0.9) infinite; }
+.azy-wait-orbit span:nth-child(4) { inset: 15px; border-top-color: var(--faint); border-right-color: transparent; animation: azy-orbit-wobble calc(1.25s * var(--azy-speed-k, 1)) ease-in-out infinite; }
+.azy-wait-orbit span:nth-child(5) { inset: 20px; border-top-color: var(--accent); border-right-color: transparent; animation: azy-orbit-flick calc(0.9s * var(--azy-speed-k, 1)) steps(8) infinite; }
+
+.azy-wait.done .azy-wait-orbit span { animation: none; border-style: solid; border-color: var(--accent); opacity: 0.9; transition: border-color calc(0.3s * var(--azy-speed-k, 1)) var(--ease); }
+.azy-wait.failed .azy-wait-orbit span { animation: none; border-style: solid; border-color: var(--faint); }
+
+.azy-wait-title {
+  font-size: 29px;
+  font-weight: 800;
+  color: var(--hue);
+  letter-spacing: 0.01em;
+  line-height: 1.15;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  animation: azy-glitch-txt calc(2.6s * var(--azy-speed-k, 1)) steps(18) infinite;
+}
+
+.azy-wait-name {
+  font-size: 17px;
+  font-weight: 600;
+  color: color-mix(in srgb, rgb(var(--hue-rgb, 214, 40, 63)) 60%, #fff);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.azy-wait-name[hidden] { display: none; }
+
+.azy-wait-stage { min-height: 18px; font-size: 13px; color: #a0a0a0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+.azy-wait-stage-text { display: inline-block; opacity: 0; transform: translateY(3px); }
+
+.azy-wait-stage-text.in {
+  opacity: 1;
+  transform: none;
+  transition: opacity calc(0.22s * var(--azy-speed-k, 1)) var(--ease), transform calc(0.22s * var(--azy-speed-k, 1)) var(--ease);
+}
+
+.azy-wait-bar { width: 100%; height: 3px; border-radius: 3px; background: var(--line-hi); overflow: hidden; }
+
+.azy-wait-bar-fill { display: block; width: 0; height: 100%; background: linear-gradient(90deg, var(--accent-2), var(--accent)); transition: width calc(0.18s * var(--azy-speed-k, 1)) var(--ease); }
+
+.azy-wait-steps { display: flex; gap: 6px; }
+
+.azy-wait-steps i { width: 5px; height: 5px; border-radius: 50%; background: var(--line-hi); transition: background-color calc(0.2s * var(--azy-speed-k, 1)) var(--ease), transform calc(0.2s * var(--azy-speed-k, 1)) var(--ease); }
+
+.azy-wait-steps i.done { background: var(--accent-2); }
+.azy-wait-steps i.now { background: var(--accent); transform: scale(1.35); animation: azy-pulse-dot calc(1s * var(--azy-speed-k, 1)) var(--ease) infinite alternate; }
+
+.azy-wait-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 8px; }
+
+.azy-wait-actions button {
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 9px 18px;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: rgba(255, 255, 255, 0.04);
+  color: #e3e3e3;
+  cursor: pointer;
+}
+.azy-wait-actions button:hover:not(:disabled) { background: rgba(var(--hue-rgb, 214, 40, 63), 0.16); color: var(--text); }
+.azy-wait-actions button:disabled { opacity: 0.45; cursor: default; }
+
+/* Minimize follows the accent like every other action (was a hardcoded purple gradient). */
+.azy-wait-min2 { display: inline-flex; align-items: center; gap: 8px; }
+.azy-wait-min2 i { font-style: normal; }
+
+/* minimized: a corner pill, veil gone, UI fully usable */
+.azy-wait--mini { position: fixed; inset: auto 14px 14px auto; justify-content: flex-end; align-items: flex-end; background: none; pointer-events: none; }
+.azy-wait--mini .azy-wait-card {
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+  width: auto;
+  padding: 7px 10px;
+  border-radius: 999px;
+  pointer-events: auto;
+}
+.azy-wait--mini .azy-wait-body { flex-direction: row; align-items: center; gap: 8px; padding: 0; }
+.azy-wait--mini .azy-wait-top,
+.azy-wait--mini .azy-wait-name,
+.azy-wait--mini .azy-wait-actions,
+.azy-wait--mini .azy-wait-stage,
+.azy-wait--mini .azy-wait-bar,
+.azy-wait--mini .azy-wait-steps { display: none; }
+.azy-wait--mini .azy-wait-orbit { width: 20px; height: 20px; margin: 0; }
+.azy-wait--mini .azy-wait-orbit span:nth-child(2) { inset: 3px; }
+.azy-wait--mini .azy-wait-orbit span:nth-child(3) { inset: 6px; }
+.azy-wait--mini .azy-wait-orbit span:nth-child(4) { inset: 9px; }
+.azy-wait--mini .azy-wait-orbit span:nth-child(5) { inset: 12px; }
+.azy-wait--mini .azy-wait-title { font-size: 11px; font-weight: 650; }
+.azy-wait--mini .azy-wait-card::before,
+.azy-wait--mini .azy-wait-card::after { display: none; }
+
+@keyframes azy-wait-sheen { 0% { transform: translateX(-16%); } 50% { transform: translateX(16%); } 100% { transform: translateX(-16%); } }
+
+@keyframes azy-orbit { to { transform: rotate(360deg); } }
+@keyframes azy-orbit-rev { to { transform: rotate(-360deg); } }
+@keyframes azy-orbit-dash { 0% { transform: rotate(0) scale(1); } 50% { transform: rotate(200deg) scale(1.07); } 100% { transform: rotate(360deg) scale(1); } }
+@keyframes azy-orbit-wobble { 0% { transform: rotate(0) skew(0); } 30% { transform: rotate(120deg) skew(7deg); } 60% { transform: rotate(220deg) skew(-7deg); } 100% { transform: rotate(360deg) skew(0); } }
+@keyframes azy-orbit-flick { 0% { transform: rotate(0); opacity: 1; } 40% { opacity: 0.2; } 50% { transform: rotate(190deg); opacity: 1; } 80% { opacity: 0.35; } 100% { transform: rotate(360deg); opacity: 1; } }
+@keyframes azy-pulse-dot { from { opacity: 0.55; } to { opacity: 1; } }
+@keyframes azy-glitch-sweep {
+  0%, 86% { clip-path: inset(0 0 100% 0); transform: translateY(0); }
+  88% { clip-path: inset(12% 0 58% 0); transform: translateY(6px); }
+  92% { clip-path: inset(64% 0 8% 0); transform: translateY(-4px); }
+  96% { clip-path: inset(30% 0 44% 0); transform: translateY(2px); }
+  100% { clip-path: inset(0 0 100% 0); transform: translateY(0); }
+}
+@keyframes azy-glitch-txt {
+  0%, 90% { text-shadow: none; transform: none; }
+  92% { text-shadow: 1px 0 rgba(255, 60, 120, 0.75), -1px 0 rgba(var(--hue-rgb), 0.75); transform: translateX(1px); }
+  95% { text-shadow: -1px 0 rgba(255, 60, 120, 0.6), 1px 0 rgba(var(--hue-rgb), 0.6); transform: translateX(-1px); }
+  98% { text-shadow: none; transform: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .azy-wait-orbit span, .azy-wait-steps i.now, .azy-wait-card::after, .azy-wait-title { animation: none; }
+}
+
+/* the wait overlay anchors to the tab pane */
+.pane { position: relative; }
+
+/* ── Link code dialog (pairing "pin") ──────────────────────────────────────── */
+.azy-pair {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(6px);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity calc(0.18s * var(--azy-speed-k, 1)) var(--ease);
+}
+
+.azy-pair.in { opacity: 1; pointer-events: auto; }
+
+.azy-pair-card {
+  position: relative;
+  width: min(320px, 90vw);
+  padding: 20px 20px 14px;
+  border: 1px solid var(--line-hi);
+  border-radius: 14px;
+  background: var(--glass-strong);
+  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.55);
+  transform: translateY(8px) scale(0.98);
+  transition: transform calc(0.24s * var(--azy-speed-k, 1)) var(--ease-dock);
+}
+
+.azy-pair.in .azy-pair-card { transform: none; }
+
+.azy-pair-close { position: absolute; top: 8px; right: 8px; }
+
+.azy-pair-title { font-size: 13px; font-weight: 600; color: var(--text); }
+
+.azy-pair-sub { margin-top: 4px; font-size: 11.5px; color: var(--dim); line-height: 1.45; }
+.azy-pair-sub b { color: var(--text); font-weight: 500; }
+
+.azy-pair-code {
+  display: flex;
+  gap: 6px;
+  justify-content: center;
+  margin: 16px 0 14px;
+}
+
+.azy-pair-code span {
+  width: 38px;
+  height: 46px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--line-hi);
+  border-radius: 9px;
+  background: var(--raised);
+  color: var(--text);
+  font-size: 22px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.02em;
+}
+
+.azy-pair-code span:nth-child(3) { margin-right: 8px; }
+
+.azy-pair.ok .azy-pair-code span { border-color: var(--accent); transition: border-color calc(0.3s * var(--azy-speed-k, 1)) var(--ease); }
+
+.azy-pair-foot { display: flex; align-items: center; gap: 7px; font-size: 11px; color: var(--dim); }
+.azy-pair-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent-2); animation: azy-pulse-dot calc(1s * var(--azy-speed-k, 1)) var(--ease) infinite alternate; }
+.azy-pair.ok .azy-pair-dot { background: var(--accent); animation: none; }
+.azy-pair-spacer { flex: 1; }
+
+/* ── Cancel on the wait overlay ────────────────────────────────────────────── */
+.azy-wait-cancel {
+  margin-top: 6px;
+  height: 26px;
+  padding: 0 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--dim);
+  font: inherit;
+  font-size: 11px;
+  cursor: pointer;
+  transition: background-color calc(0.14s * var(--azy-speed-k, 1)) var(--ease), color calc(0.14s * var(--azy-speed-k, 1)) var(--ease), opacity calc(0.16s * var(--azy-speed-k, 1)) var(--ease);
+}
+
+.azy-wait-cancel:hover:not(:disabled) { background: var(--raised); color: var(--text); }
+.azy-wait-cancel:disabled { opacity: 0.5; cursor: default; }
+/* Mounted on <body>: covers the whole window (main, Snap, Speed, Azy inside Premiere). */
+body > .azy-wait { position: fixed; z-index: 9999; }
+body > .azy-wait .azy-wait-card { pointer-events: auto; }
+.azy-wait.done .azy-wait-cancel, .azy-wait.failed .azy-wait-cancel { visibility: hidden; }
+
+/* ---- Azy Scope: Clip · Playhead (Flow tab + Speed window) ---- */
+.azy-scope-slot { display: inline-flex; flex-shrink: 0; }
+.azy-scope {
+  display: inline-flex;
+  gap: 2px;
+  padding: 2px;
+  border-radius: var(--radius-sm, 8px);
+  background: var(--raised);
+  border: 1px solid var(--line);
+}
+.azy-scope-btn--hidden { display: none; }
+
+.azy-scope-btn {
+  height: 24px;
+  padding: 0 9px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--dim);
+  font: inherit;
+  font-size: 11.5px;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  cursor: pointer;
+  transition: background-color calc(0.16s * var(--azy-speed-k, 1)) var(--ease), color calc(0.16s * var(--azy-speed-k, 1)) var(--ease);
+}
+.azy-scope-btn:hover { color: var(--text); }
+.azy-scope-btn.active {
+  color: #060606;
+  background: linear-gradient(135deg, var(--accent), var(--text) 55%, var(--accent-2));
+  font-weight: 600;
+}
+.speed-scope-row { display: flex; justify-content: center; margin: 2px 0 8px; }
+
+/* ---- Flow graph: speed indicator (velocity of the ease, Smoothify-style) ---- */
+.flow-velocity-curve {
+  fill: none;
+  stroke: var(--accent-2);
+  stroke-width: 1.4;
+  stroke-dasharray: 3 2;
+  vector-effect: non-scaling-stroke;
+  stroke-linejoin: round;
+  opacity: 0.85;
+  pointer-events: none;
+}
+.flow-velocity-label { font-size: 2.6px; letter-spacing: 0.02em; fill: var(--dim); opacity: 0.9; pointer-events: none; user-select: none; }
+.flow-graph.speed-off .flow-velocity-curve, .flow-graph.speed-off .flow-velocity-label,
+.flow-graph.is-off .flow-velocity-curve, .flow-graph.is-off .flow-velocity-label { display: none; }
+.flow-velocity-toggle { display: flex; align-items: center; gap: 6px; align-self: end; height: 26px; font-size: 11px; color: var(--dim); cursor: pointer; user-select: none; }
+.flow-velocity-toggle input { accent-color: var(--accent); margin: 0; }
+
+/* ---- Speed prompt (Shift+click on a preset) — shares the wait-overlay card ---- */
+.azy-speed-prompt .azy-wait-card { min-width: 260px; max-width: 320px; gap: 6px; pointer-events: auto; }
+.azy-speed-prompt-name { font-size: 11.5px; color: var(--dim); max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.azy-speed-prompt .speed-big { display: flex; align-items: baseline; margin-top: 8px; color: var(--text); font-variant-numeric: tabular-nums; line-height: 1; }
+.azy-speed-prompt .speed-big-value { font-size: 44px; font-weight: 600; letter-spacing: -0.02em; transition: transform calc(0.14s * var(--azy-speed-k, 1)) var(--ease); }
+.azy-speed-prompt .speed-big.bump .speed-big-value { transform: scale(1.04); }
+.azy-speed-prompt .speed-big-unit { margin-left: 2px; font-size: 20px; font-weight: 500; color: var(--dim); }
+.azy-speed-prompt-hint { min-height: 14px; font-size: 11px; color: var(--dim); }
+.azy-speed-prompt.is-changed .azy-speed-prompt-hint { color: var(--text); }
+.azy-speed-prompt-slot { margin-top: 10px; }
+.azy-speed-prompt-slot .azy-speed-label { display: none; }
+.azy-speed-prompt-slot .azy-speed-range { width: 150px; }
+.azy-speed-prompt-scale { display: flex; justify-content: space-between; width: 170px; font-size: 9.5px; color: var(--faint); }
+.azy-speed-prompt-actions { display: flex; gap: 8px; margin-top: 10px; }
+.azy-speed-prompt-apply {
+  height: 28px;
+  padding: 0 16px;
+  border: 0;
+  border-radius: 8px;
+  color: #060606;
+  background: linear-gradient(135deg, var(--accent), var(--text) 55%, var(--accent-2));
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform calc(0.14s * var(--azy-speed-k, 1)) var(--ease), filter calc(0.14s * var(--azy-speed-k, 1)) var(--ease);
+}
+.azy-speed-prompt-apply:hover { filter: brightness(1.06); }
+.azy-speed-prompt-apply:active { transform: scale(0.97); }
+.azy-speed-prompt-foot { font-size: 10px; color: var(--faint); }
+.file-card.asking { outline: 1px solid var(--line-hi); }
+
+/* ── Settings: segmented controls ──────────────────────────────────────────
+   The same dark control frame is used for animation, colour and preview placement.
+   Without this shared rule the latter two fall back to the platform's white button
+   appearance, which is especially jarring against Azy's near-black cyan surface. */
+.snap-seg {
+  display: inline-flex; align-items: center; gap: 2px; padding: 2px; border-radius: var(--radius-sm);
+  background: var(--raised); border: 1px solid var(--line); flex-shrink: 0;
+}
+.snap-seg .snap-seg-btn {
+  -webkit-app-region: no-drag;
+  -webkit-appearance: none; appearance: none;
+  display: inline-flex; align-items: center; justify-content: center; padding: 4px 10px; border-radius: 6px; border: 1px solid transparent;
+  background: transparent; color: var(--dim); font: inherit; font-size: 12px; line-height: 1.2; cursor: pointer;
+  transition: background-color var(--t-fast) var(--ease), color var(--t-fast) var(--ease), border-color var(--t-fast) var(--ease), transform var(--t-fast) var(--spring);
+}
+.snap-seg .snap-seg-btn:hover { color: var(--text); background: var(--raised); }
+.snap-seg .snap-seg-btn:active { transform: scale(0.95); }
+.snap-seg .snap-seg-btn.active { background: var(--raised-hi); border-color: var(--line-hi); color: var(--text); }
+
+/* ── Status bar connection indicator ─────────────────────────────────────── */
+.status-conn {
+  display: inline-flex; align-items: center; flex-shrink: 0; margin-right: 10px;
+  padding: 2px 8px 2px 6px; border-radius: 999px; border: 1px solid var(--line);
+  font-size: 10.5px; color: var(--dim); white-space: nowrap; max-width: 46%;
+  overflow: hidden; text-overflow: ellipsis; cursor: default;
+  transition: border-color var(--t-med) var(--ease), color var(--t-med) var(--ease), background-color var(--t-med) var(--ease);
+}
+.status-conn.is-ok { color: var(--text); border-color: rgba(255, 255, 255, 0.22); }
+.status-conn.is-warn { color: var(--accent-2); cursor: pointer; }
+.status-conn.is-err { color: var(--text); border-color: rgba(255, 255, 255, 0.4); cursor: pointer; }
+.status-conn #statusConnText { display: inline-block; overflow: hidden; text-overflow: ellipsis; }
+.status-conn.swap #statusConnText { animation: connSwap var(--t-med) var(--ease); }
+@keyframes connSwap { from { opacity: 0; transform: translateY(3px); } to { opacity: 1; transform: none; } }
+
+/* ── First-run welcome ──────────────────────────────────────────────────── */
+.welcome-back {
+  position: fixed; inset: 0; z-index: 70; display: flex; align-items: center; justify-content: center;
+  background: rgba(0, 0, 0, 0.55); animation: fadeIn var(--t-med) var(--ease) both;
+}
+.welcome-back[hidden] { display: none; }
+.welcome-back.out { animation: fadeOut var(--t-med) var(--ease) both; pointer-events: none; }
+@keyframes fadeOut { from { opacity: 1; } to { opacity: 0; } }
+.welcome {
+  width: min(340px, calc(100% - 32px)); padding: 22px 20px 18px; border-radius: 16px;
+  background: rgba(0, 0, 0, 0.92); border: 1px solid var(--line-hi);
+  box-shadow: 0 30px 70px -30px rgba(0, 0, 0, 0.9);
+  animation: riseIn calc(0.4s * var(--azy-speed-k, 1)) var(--spring) both; text-align: center;
+}
+.welcome-mark {
+  width: 46px; height: 46px; margin: 0 auto 12px; border-radius: 14px; display: grid; place-items: center;
+  font-weight: 800; font-size: 22px; color: #060606; background: var(--accent); letter-spacing: -0.02em;
+}
+.welcome-title { font-size: 17px; font-weight: 700; color: var(--text); }
+.welcome-sub { font-size: 12px; color: var(--dim); margin-top: 4px; min-height: 16px; }
+.welcome-checks { list-style: none; margin: 16px 0 0; padding: 0; text-align: left; display: flex; flex-direction: column; gap: 6px; }
+.welcome-checks li {
+  display: grid; grid-template-columns: 14px 1fr auto; align-items: center; gap: 10px;
+  padding: 8px 10px; border-radius: 10px; background: var(--raised); font-size: 12px; color: var(--text);
+  animation: riseIn calc(0.3s * var(--azy-speed-k, 1)) var(--ease) both;
+}
+.welcome-checks li:nth-child(2) { animation-delay: calc(40ms * var(--azy-speed-k, 1)); } .welcome-checks li:nth-child(3) { animation-delay: calc(80ms * var(--azy-speed-k, 1)); } .welcome-checks li:nth-child(4) { animation-delay: calc(120ms * var(--azy-speed-k, 1)); }
+.welcome-checks em { font-style: normal; font-size: 10.5px; color: var(--dim); max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.wc-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--faint); transition: background-color var(--t-med) var(--ease), box-shadow var(--t-med) var(--ease); }
+li.is-busy .wc-dot { background: var(--accent-2); animation: dotPulse calc(1.1s * var(--azy-speed-k, 1)) ease-in-out infinite; }
+li.is-ok .wc-dot { background: var(--accent); box-shadow: 0 0 8px rgba(255, 255, 255, 0.6); }
+li.is-warn .wc-dot { background: var(--dim); }
+li.is-err .wc-dot { background: var(--accent-2); box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.15); }
+.welcome-result { margin-top: 14px; font-size: 12.5px; color: var(--text); min-height: 18px; }
+.welcome-actions { display: flex; justify-content: center; gap: 8px; margin-top: 12px; }
+
+/* ---------- Dagger pins: ◎ badge on audio + preset tiles, pin list in Settings ---------- */
+.wheel-badge {
+  position: absolute; top: 5px; left: 5px; width: 18px; height: 18px; padding: 0;
+  display: grid; place-items: center; border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.16); background: rgba(0, 0, 0, 0.55); color: var(--dim);
+  cursor: pointer; opacity: 0;
+  transition: opacity var(--t-fast) var(--ease), transform var(--t-fast) var(--spring), color var(--t-fast) var(--ease), border-color var(--t-fast) var(--ease);
+}
+.file-card:hover .wheel-badge, .wheel-badge.on { opacity: 1; }
+.wheel-badge:hover { color: var(--accent); transform: scale(1.18); border-color: rgba(255, 255, 255, 0.36); }
+.wheel-badge.on { color: var(--accent); border-color: rgba(255, 255, 255, 0.4); box-shadow: 0 0 10px -2px rgba(255, 255, 255, 0.5); }
+.dagger-note { display: flex; flex-wrap: wrap; gap: 4px 14px; }
+.dagger-note em { font-style: normal; color: var(--faint); }
+.dagger-actions { display: flex; flex-wrap: wrap; gap: 6px; }
+.dagger-pins { padding: 0 0 6px; }
+.dagger-pins-h { font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--faint); margin: 8px 0 3px; }
+.dagger-pin { display: flex; align-items: center; gap: 6px; padding: 3px 0 3px 4px; font-size: 11.5px; color: var(--dim); border-radius: var(--radius-sm); }
+.dagger-pin:hover { background: var(--raised); color: var(--text); }
+.dagger-pin-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dagger-pin-x { width: 20px; height: 20px; font-size: 10px; }
+
+.azy-pair-port { margin-top: 10px; font-size: 11.5px; color: var(--dim); }
+.azy-pair-port b { color: var(--text); font-weight: 600; font-variant-numeric: tabular-nums; }
+.azy-pair-port span { color: var(--faint); }
+
+/* ---------- Wheel buttons + pins popover ---------- */
+.wheel-btn { position: relative; }
+.wheel-btn.has-pins { color: var(--accent); }
+.wheel-btn[aria-pressed="true"] { background: var(--raised-hi); }
+.wheel-btn-count { position: absolute; top: -3px; right: -3px; min-width: 14px; height: 14px; padding: 0 3px; border-radius: 7px; background: var(--accent); color: rgba(0, 0, 0, 0.9); font-size: 9px; font-weight: 700; line-height: 14px; text-align: center; }
+.wheel-btn-count:empty { display: none; }
+.wheel-pop { position: fixed; z-index: 60; width: 250px; padding: 10px 10px 8px; border-radius: var(--radius); background: var(--glass-strong); backdrop-filter: blur(18px); border: 1px solid var(--line-hi); box-shadow: 0 14px 40px -12px rgba(0, 0, 0, 0.8); opacity: 0; transform: translateY(-4px) scale(0.98); transition: opacity var(--t-fast) var(--ease), transform var(--t-fast) var(--spring); }
+.wheel-pop.in { opacity: 1; transform: none; }
+.wheel-pop-head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; margin-bottom: 6px; font-size: 12px; }
+.wheel-pop-head b { color: var(--text); font-weight: 600; }
+.wheel-pop-head span { color: var(--faint); font-size: 10.5px; }
+.wheel-pop-empty, .wheel-pop-hint { font-size: 11px; color: var(--dim); line-height: 1.45; padding: 4px 2px; }
+.wheel-pop-list { display: flex; flex-direction: column; gap: 1px; max-height: 240px; overflow: auto; }
+.wheel-pop-row { display: flex; align-items: center; gap: 7px; padding: 3px 2px 3px 4px; border-radius: var(--radius-sm); font-size: 11.5px; color: var(--dim); }
+.wheel-pop-row:hover { background: var(--raised); color: var(--text); }
+.wheel-pop-n { width: 14px; text-align: center; font-size: 10px; color: var(--faint); }
+.wheel-pop-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.wheel-pop-x { width: 20px; height: 20px; font-size: 10px; opacity: 0; }
+.wheel-pop-row:hover .wheel-pop-x { opacity: 1; }
+.wheel-pop-foot { display: flex; gap: 6px; margin-top: 8px; }
+
+/* Dagger: native helper status chips + orderable lists */
+.dagger-native { display: flex; flex-wrap: wrap; gap: 6px; margin: 4px 0 10px; }
+.dagger-native-chip { font-size: 10.5px; padding: 3px 8px; border-radius: 999px; border: 1px solid var(--line); color: var(--dim); }
+.dagger-native-chip.is-ok { color: var(--text); border-color: rgba(var(--hue-rgb, 214, 40, 63), 0.35); }
+.dagger-native-chip.is-bad { color: var(--text); border-color: var(--line-hi); text-decoration: line-through; opacity: 0.7; }
+.dagger-pin { display: flex; align-items: center; gap: 6px; }
+.dagger-pin-n { width: 16px; text-align: right; font-size: 10.5px; color: var(--faint); font-variant-numeric: tabular-nums; }
+.dagger-pin-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dagger-pin .icon-btn:disabled { opacity: 0.25; }
+
+/* ============================================================================
+   Purpose-built section surfaces — Preset Deck, Motion Studio, Control Room.
+   The shared Azy chrome comes from styles.css; these rules give each workbench
+   its own reading order and keep the actual cards/controls inexpensive to draw.
+   ============================================================================ */
+
+/* ---------- Preset Deck ---------- */
+.presets-pane .section-hero {
+  min-height: 118px;
+  background:
+    radial-gradient(62% 150% at 102% -10%, rgba(var(--hue-rgb), .16), transparent 56%),
+    linear-gradient(115deg, rgba(45, 45, 45, .44), rgba(13, 13, 13, .82) 58%, rgba(24, 24, 24, .68));
+}
+.preset-hero-actions { display: flex; flex-direction: column; align-items: flex-end; gap: 8px; flex-shrink: 0; }
+.preset-connection-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 22px;
+  padding: 0 7px;
+  border: 1px solid rgba(var(--hue-rgb), .15);
+  border-radius: 999px;
+  color: var(--faint);
+  background: rgba(12, 12, 12, .42);
+  font-size: 9px;
+  white-space: nowrap;
+}
+.preset-connection-pill > span { width: 5px; height: 5px; border-radius: 50%; background: var(--faint); }
+.preset-connection-pill b { color: var(--dim); font-size: 9px; font-weight: 650; }
+.preset-connection-pill em { max-width: 46px; overflow: hidden; text-overflow: ellipsis; font-style: normal; }
+.preset-connection-pill.is-ok { border-color: rgba(var(--hue-rgb), .31); color: var(--azy-teal-soft); }
+.preset-connection-pill.is-ok > span { background: var(--azy-teal); box-shadow: 0 0 7px rgba(var(--hue-rgb), .52); }
+.preset-connection-pill.is-warn > span { background: #d5d5d5; }
+
+.preset-source-rack .pins-strip { min-height: 21px; }
+.preset-toolbar { padding: 5px 11px; border-top: 0; background: rgba(16, 16, 16, .92); }
+.preset-command-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px 6px;
+  flex-shrink: 0;
+  border-bottom: 1px solid rgba(var(--hue-rgb), .08);
+  background: rgba(13, 13, 13, .56);
+}
+.preset-search-row { flex: 1; min-width: 0; padding: 0; border: 0; }
+.preset-search-row .search-input { min-height: 30px; border-radius: 8px; background: rgba(50, 50, 50, .2); }
+.preset-board-label,
+.flow-deck-label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-height: 25px;
+  padding: 4px 13px 0;
+  flex-shrink: 0;
+  color: var(--azy-teal-soft);
+  font-size: 9.5px;
+  font-weight: 650;
+  letter-spacing: .055em;
+  text-transform: uppercase;
+}
+
+.presets-pane .file-grid {
+  min-height: 0;
+  padding: 8px 12px 14px;
+  grid-template-columns: repeat(auto-fill, minmax(145px, 1fr));
+  gap: 9px;
+  background: linear-gradient(180deg, rgba(17, 17, 17, .24), transparent 35%);
+}
+.presets-pane .preset-card {
+  align-items: stretch;
+  gap: 0;
+  min-height: 131px;
+  padding: 7px;
+  overflow: hidden;
+  border-color: rgba(var(--hue-rgb), .095);
+  border-radius: 11px;
+  background:
+    linear-gradient(142deg, rgba(var(--hue-rgb), .12), transparent 52%),
+    rgba(16, 16, 16, .63);
+  box-shadow: inset 0 1px 0 rgba(var(--hue-rgb), .025);
+}
+.presets-pane .preset-card:hover { border-color: rgba(var(--hue-rgb), .3); background: linear-gradient(142deg, rgba(var(--hue-rgb), .21), transparent 58%), rgba(18, 18, 18, .83); box-shadow: 0 14px 28px -21px #000, inset 0 1px 0 rgba(var(--hue-rgb), .08); transform: translateY(-2px); }
+.presets-pane .preset-card .thumb { aspect-ratio: 1 / 1; border-radius: 8px; background: linear-gradient(135deg, rgba(var(--hue-rgb), .19), rgba(16, 16, 16, .45)); }
+.presets-pane .preset-card .thumb--folder { background: linear-gradient(135deg, rgba(var(--hue-rgb), .19), rgba(16, 16, 16, .31)); }
+.presets-pane .preset-card .file-name { margin-top: 7px; padding: 0 2px; text-align: left; font-size: 10.8px; font-weight: 640; line-height: 1.25; color: var(--text); }
+.presets-pane .preset-card .fav-badge { top: 6px; right: 6px; width: 20px; height: 20px; background: rgba(10, 10, 10, .72); border-color: rgba(var(--hue-rgb), .18); }
+.presets-pane .preset-card .count-badge { bottom: 5px; right: 6px; color: var(--azy-teal-soft); background: rgba(12, 12, 12, .72); }
+.presets-pane .preset-card.applying::after { content: "Applying"; position: absolute; inset: 0; display: grid; place-items: center; color: var(--azy-teal-soft); background: rgba(13, 13, 13, .64); font-size: 10px; font-weight: 660; letter-spacing: .08em; text-transform: uppercase; }
+
+/* ---------- Motion Studio ---------- */
+.flow-pane { background: linear-gradient(180deg, rgba(15, 15, 15, .28), transparent 33%); }
+.flow-hero {
+  min-height: 124px;
+  background:
+    radial-gradient(68% 165% at 94% -8%, rgba(var(--hue-rgb), .22), transparent 57%),
+    linear-gradient(115deg, rgba(32, 32, 32, .82), rgba(14, 14, 14, .88) 62%, rgba(23, 23, 23, .72));
+}
+.flow-hero::before { right: -12px; bottom: -20px; width: 190px; height: 140px; opacity: .62; }
+.flow-hero-target {
+  align-self: center;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: min(42%, 205px);
+  padding: 9px 10px;
+  border: 1px solid rgba(var(--hue-rgb), .16);
+  border-radius: 10px;
+  background: rgba(13, 13, 13, .49);
+  box-shadow: inset 0 1px 0 rgba(var(--hue-rgb), .035);
+}
+.flow-hero-target .flow-target { display: flex; flex: none; padding: 0; font-size: 9.5px; line-height: 1.3; }
+.flow-hero-target .flow-target-text { white-space: normal; overflow: visible; }
+.flow-hero-target-label { color: var(--faint); font-size: 8.5px; line-height: 1.2; }
+.flow-target.is-ok .flow-target-dot { background: var(--azy-teal); box-shadow: 0 0 8px rgba(var(--hue-rgb), .58); }
+.flow-target.is-warn .flow-target-dot { background: var(--hue); animation: none; }
+.flow-toolbar { min-height: 39px; padding: 5px 11px; border-top: 0; background: rgba(17, 17, 17, .92); }
+.flow-toolbar-label { color: var(--faint); font-size: 8px; font-weight: 720; letter-spacing: .14em; text-transform: uppercase; }
+.flow-toolbar .azy-scope-slot { margin-right: auto; }
+.flow-command-bar { display: flex; align-items: center; gap: 8px; padding: 8px 12px 6px; flex-shrink: 0; border-bottom: 1px solid rgba(var(--hue-rgb), .08); background: rgba(13, 13, 13, .55); }
+/* Move Selected Keyframes → playhead: a compact utility row, not a panel. */
+/* Move-to-playhead: one compact segmented pill in the Flow header row (icon · Start/End · shortcut). */
+.flow-move { display: inline-flex; flex: 0 0 auto; align-items: center; height: 28px; padding: 1px; gap: 0; border-radius: 9px; border: 1px solid rgba(var(--hue-rgb, 214, 40, 63), .18); background: rgba(var(--hue-rgb, 214, 40, 63), .06); }
+.flow-move > * + * { border-left: 1px solid rgba(var(--hue-rgb, 214, 40, 63), .14); }
+.flow-move-btn, .flow-move-mode, .flow-move-shortcut { height: 24px; margin: 0; border: 0; background: transparent; color: var(--text); font: inherit; font-size: 10.5px; cursor: pointer; }
+.flow-move-btn { display: inline-flex; align-items: center; justify-content: center; width: 26px; padding: 0; border-radius: 7px 0 0 7px; color: var(--accent-3, var(--azy-teal)); }
+.flow-move-btn:hover { background: rgba(var(--hue-rgb, 214, 40, 63), .16); }
+.flow-move-btn.applying { opacity: .55; pointer-events: none; }
+.flow-move-mode { appearance: none; -webkit-appearance: none; padding: 0 8px; outline: none; }
+.flow-move-mode option { background: var(--surface, #0e0e0e); color: var(--text); }
+.flow-move-mode:hover { background: rgba(var(--hue-rgb, 214, 40, 63), .1); }
+.flow-move-shortcut { padding: 0 7px; border-radius: 0 7px 7px 0; color: var(--faint); font-size: 9.5px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.flow-move-shortcut:hover { color: var(--text); background: rgba(var(--hue-rgb, 214, 40, 63), .1); }
+.flow-move-shortcut.recording { color: var(--accent-3, var(--azy-teal)); box-shadow: inset 0 0 0 1px currentColor; }
+.flow-move-shortcut.is-conflict { color: var(--azy-red, #ff6b6b); }
+/* Keep the Flow header on one row with the Move pill: Create curve collapses to its + icon first. */
+@media (max-width: 680px) { #flowCreateBtn > span { display: none; } }
+@media (max-width: 520px) { .flow-move-shortcut { display: none; } .flow-move-mode { padding: 0 6px; } }
+/* Phone-narrow panels (<400px) have no room left in the header row; the global shortcut still works. */
+@media (max-width: 399px) { .flow-move { display: none; } }
+.flow-search-row { flex: 1; min-width: 0; padding: 0; border: 0; }
+.flow-search-row .search-input { min-height: 30px; border-radius: 8px; background: rgba(50, 50, 50, .2); }
+.flow-grid { min-height: 0; padding: 8px 12px 14px; grid-template-columns: repeat(auto-fill, minmax(132px, 1fr)); gap: 9px; background: linear-gradient(180deg, rgba(17, 17, 17, .18), transparent 35%); }
+.flow-grid .flow-group { padding: 5px 1px 0; color: var(--azy-teal); font-size: 8.5px; }
+.flow-grid .flow-card { align-items: stretch; gap: 0; min-height: 133px; padding: 7px; overflow: hidden; border-color: rgba(var(--hue-rgb), .11); border-radius: 11px; background: linear-gradient(145deg, rgba(var(--hue-rgb), .16), rgba(15, 15, 15, .66) 58%); }
+.flow-grid .flow-card:hover { border-color: rgba(var(--hue-rgb), .35); background: linear-gradient(145deg, rgba(var(--hue-rgb), .25), rgba(16, 16, 16, .83) 60%); box-shadow: 0 14px 27px -21px #000; transform: translateY(-2px); }
+.flow-grid .flow-card .thumb { aspect-ratio: 1 / 1; border-radius: 8px; background: radial-gradient(80% 110% at 62% 100%, rgba(var(--hue-rgb), .14), rgba(16, 16, 16, .48)); }
+.flow-grid .flow-glyph { width: 48px; height: 48px; color: var(--azy-teal); }
+.flow-grid .flow-card .file-name { margin-top: 7px; padding: 0 2px; text-align: left; font-size: 10.8px; font-weight: 640; color: var(--text); }
+.flow-grid .flow-card.applying::after { content: "Applying easing"; position: absolute; inset: 0; display: grid; place-items: center; color: var(--azy-teal-soft); background: rgba(13, 13, 13, .65); font-size: 9px; font-weight: 670; letter-spacing: .09em; text-transform: uppercase; }
+.flow-editor { margin: 0 12px 12px; padding: 12px; border-color: rgba(var(--hue-rgb), .25); border-radius: 12px; background: linear-gradient(145deg, rgba(65, 65, 65, .34), rgba(14, 14, 14, .9) 48%); box-shadow: inset 0 1px 0 rgba(var(--hue-rgb), .05); }
+.flow-editor-head::before { content: "CURVE LAB"; margin-right: auto; color: var(--azy-teal); font-size: 8px; font-weight: 730; letter-spacing: .14em; }
+.flow-editor-head .flow-name { order: -1; flex: 1; }
+.flow-editor .flow-graph { border-color: rgba(var(--hue-rgb), .26); background: rgba(13, 13, 13, .46); }
+.flow-editor .flow-curve-path { stroke: var(--azy-teal); }
+.flow-editor .flow-handle { fill: var(--azy-teal); stroke: #1f1f1f; }
+
+/* ---------- Settings / Control Room ---------- */
+.settings-pane { flex-direction: column; min-height: 0; background: linear-gradient(180deg, rgba(17, 17, 17, .36), transparent 32%); }
+.settings-hero {
+  position: relative;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 103px;
+  padding: 14px 15px;
+  overflow: hidden;
+  border-bottom: 1px solid rgba(var(--hue-rgb), .13);
+  background: radial-gradient(60% 160% at 100% 0%, rgba(var(--hue-rgb), .16), transparent 57%), linear-gradient(115deg, rgba(41, 41, 41, .62), rgba(14, 14, 14, .88) 67%);
+}
+.settings-hero::after { content: ""; position: absolute; right: -25px; bottom: -44px; width: 145px; height: 122px; border: 1px solid rgba(var(--hue-rgb), .12); border-radius: 50%; box-shadow: 0 0 0 18px rgba(var(--hue-rgb), .025), 0 0 0 36px rgba(var(--hue-rgb), .015); }
+.settings-hero > div:first-child { position: relative; z-index: 1; min-width: 0; }
+.settings-hero p { max-width: 305px; }
+.settings-hero-status { position: relative; z-index: 1; display: flex; align-items: center; gap: 7px; flex: 0 0 auto; padding: 8px; border: 1px solid rgba(var(--hue-rgb), .16); border-radius: 9px; background: rgba(13, 13, 13, .5); }
+.settings-status-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--azy-teal); box-shadow: 0 0 8px rgba(var(--hue-rgb), .48); }
+.settings-hero-status > span:last-child { display: flex; flex-direction: column; gap: 2px; }
+.settings-hero-status b { color: var(--dim); font-size: 9.5px; font-weight: 650; white-space: nowrap; }
+.settings-hero-status em { color: var(--faint); font-size: 8px; font-style: normal; white-space: nowrap; }
+.settings-workbench { display: flex; flex: 1; min-height: 0; }
+.settings-rail {
+  display: flex;
+  flex: 0 0 133px;
+  flex-direction: column;
+  gap: 3px;
+  padding: 9px 7px;
+  overflow-y: auto;
+  border-right: 1px solid rgba(var(--hue-rgb), .1);
+  background: rgba(13, 13, 13, .66);
+}
+.settings-cat {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 44px;
+  padding: 6px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  color: var(--faint);
+  background: transparent;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: color var(--t-fast) var(--ease), background-color var(--t-fast) var(--ease), border-color var(--t-fast) var(--ease), transform var(--t-fast) var(--spring);
+}
+.settings-cat:hover { color: var(--dim); background: rgba(var(--hue-rgb), .055); }
+.settings-cat:active { transform: scale(.98); }
+.settings-cat.active { color: var(--azy-teal-soft); border-color: rgba(var(--hue-rgb), .22); background: linear-gradient(115deg, rgba(var(--hue-rgb), .16), rgba(54, 54, 54, .12)); box-shadow: inset 2px 0 0 var(--azy-teal); }
+.settings-cat-icon { display: grid; width: 25px; height: 25px; flex: 0 0 auto; place-items: center; border: 1px solid rgba(var(--hue-rgb), .1); border-radius: 7px; color: var(--dim); background: rgba(24, 24, 24, .46); }
+.settings-cat.active .settings-cat-icon { color: var(--azy-teal); border-color: rgba(var(--hue-rgb), .25); background: rgba(var(--hue-rgb), .12); }
+.settings-cat > span:last-child { min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.settings-cat b { overflow: hidden; text-overflow: ellipsis; color: currentColor; font-size: 10px; font-weight: 650; white-space: nowrap; }
+.settings-cat em { overflow: hidden; text-overflow: ellipsis; color: var(--faint); font-size: 8px; font-style: normal; white-space: nowrap; }
+.settings-body { min-width: 0; padding: 11px 12px 15px; gap: 0; background: linear-gradient(180deg, rgba(18, 18, 18, .25), transparent 28%); }
+.settings-group { display: flex; flex-direction: column; gap: 7px; }
+.settings-group.enter { animation: settingsGroupIn calc(.2s * var(--azy-speed-k, 1)) var(--ease) both; }
+@keyframes settingsGroupIn { from { opacity: 0; transform: translateX(6px); } to { opacity: 1; transform: none; } }
+.settings-h { display: flex; align-items: center; gap: 7px; margin: 5px 1px 1px; color: var(--azy-teal); font-size: 8.5px; font-weight: 730; letter-spacing: .14em; }
+.settings-h::after { content: ""; flex: 1; height: 1px; background: linear-gradient(90deg, rgba(var(--hue-rgb), .22), transparent); }
+.settings-h:first-child { margin-top: 0; }
+.settings-body .snap-setting { gap: 10px; padding: 10px; border-color: rgba(var(--hue-rgb), .115); border-radius: 10px; background: linear-gradient(135deg, rgba(46, 46, 46, .3), rgba(17, 17, 17, .58)); animation: none; }
+.settings-body .snap-setting + .snap-setting { margin-top: 0; }
+.settings-body .snap-setting:hover { border-color: rgba(var(--hue-rgb), .2); }
+.settings-body .snap-setting-title { font-size: 11px; }
+.settings-body .snap-setting-desc { color: var(--faint); font-size: 9.5px; line-height: 1.42; }
+.settings-body .snap-seg { border-color: rgba(var(--hue-rgb), .13); background: rgba(15, 15, 15, .72); }
+.settings-body .snap-seg-btn { color: var(--faint); font-size: 10px; }
+.settings-body .snap-seg-btn.active { color: var(--azy-teal-soft); background: rgba(var(--hue-rgb), .14); }
+.settings-body .snap-keycap { border-color: rgba(var(--hue-rgb), .22); background: rgba(19, 19, 19, .72); color: var(--azy-teal-soft); }
+.settings-body .snap-switch:checked { background: var(--azy-teal); }
+
+@media (max-width: 430px) {
+  .preset-connection-pill em { display: none; }
+  .presets-pane .file-grid, .flow-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); padding-inline: 9px; gap: 8px; }
+  .flow-hero-target { width: 41%; padding: 7px; }
+  .settings-rail { flex-basis: 42px; gap: 5px; padding-inline: 5px; }
+  .settings-cat { justify-content: center; min-height: 37px; padding: 4px; }
+  .settings-cat > span:last-child { display: none; }
+  .settings-cat-icon { width: 26px; height: 26px; }
+  .settings-body { padding-inline: 9px; }
+  .settings-body .snap-setting {
+    align-items: flex-start;
+    flex-direction: column;
+    /* The desktop layout wraps row children. In a column flex container that
+       creates a second horizontal flex line, which can place the colour
+       chooser outside the card. Stack it on one vertical line instead. */
+    flex-wrap: nowrap;
+  }
+  /* The desktop row uses an auto left margin to push a control beside its
+     description. Once the compact layout stacks those pieces, that same auto
+     margin would anchor an otherwise full-width segment at the far edge of the
+     card. Reset it at the exact selector specificity, then let the four colour
+     options wrap within the card instead of escaping the window. */
+  .settings-body .snap-setting > .snap-seg,
+  .settings-body .snap-setting > .snap-keys {
+    align-self: stretch;
+    min-width: 0;
+    max-width: 100%;
+    margin-left: 0;
+  }
+  .settings-body .theme-seg { box-sizing: border-box; }
+}
+
+
+@media (max-height: 620px) {
+  .presets-pane .section-hero, .flow-hero { min-height: 75px; }
+  .flow-hero-target { padding: 6px 8px; }
+  .settings-hero { min-height: 70px; padding-block: 8px; }
+  .settings-hero p, .settings-hero-status em { display: none; }
+  .settings-rail { padding-top: 5px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .settings-group.enter { animation: none !important; }
+}
+
+/* Dagger bindings: Hold / Toggle switch beside each wheel's key */
+.dagger-bind-mode { display: inline-flex; gap: 2px; margin-right: 6px; vertical-align: middle; }
+.dagger-bind-mode .chip { padding: 2px 8px; font-size: 11px; min-height: 0; }
+.dagger-bind-mode .chip.active { border-color: rgba(var(--hue-rgb), 0.7); background: rgba(var(--hue-rgb), 0.16); color: var(--azy-text-1); }

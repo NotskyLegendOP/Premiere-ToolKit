@@ -1,0 +1,192 @@
+/* ============================================================
+   Azy Artwork — placement + motion for the spider-inspired art universe.
+   The artwork itself is pure inline SVG in presets/azy-artwork.js; this file
+   decides where each piece lives, how it themes, and when it is allowed to move.
+
+   Hard rules (guarded by test/test-artwork.js):
+   - every .azy-art layer is pointer-events:none and aria-hidden — artwork can
+     never intercept a click, drag, drop, hover or shortcut;
+   - colour is always currentColor → var(--azy-accent) → the active theme hue.
+     Nothing here hardcodes a palette;
+   - motion is compositor-friendly only: opacity, transform, stroke-dashoffset.
+     No animated filters, no blur loops, no canvas, no JS per-frame work;
+   - the strand "forming" draw is one-shot (forwards); ambient loops are slow
+     (≥3.6s), tiny in amplitude, and staggered so nothing pulses in unison;
+   - prefers-reduced-motion, html.azy-art-off (heavy processing) and very
+     narrow windows each disable or hide the decorative layer automatically.
+   ============================================================ */
+
+/* ---- base -------------------------------------------------- */
+.azy-art {
+  display: block;
+  pointer-events: none;
+  color: var(--azy-accent, #d6283f);
+  overflow: visible;
+}
+.azy-art use { pointer-events: none; }
+
+/* Fade every piece into the dark canvas instead of hard-clipping it: the web
+   strands dissolve before they reach the edge of their box. */
+.azy-art--fade {
+  -webkit-mask-image: radial-gradient(120% 120% at 50% 42%, #000 36%, rgba(0,0,0,0.55) 62%, transparent 82%);
+  mask-image: radial-gradient(120% 120% at 50% 42%, #000 36%, rgba(0,0,0,0.55) 62%, transparent 82%);
+}
+
+/* ---- motion vocabulary -------------------------------------- */
+@keyframes azyArtDraw   { from { stroke-dashoffset: 460; } to { stroke-dashoffset: 0; } }
+@keyframes azyArtTravel { from { stroke-dashoffset: 214; } to { stroke-dashoffset: 0; } }
+@keyframes azyArtBreathe { 0%, 100% { opacity: 1; } 50% { opacity: 0.55; } }
+@keyframes azyArtTwinkle { 0%, 100% { opacity: 0.12; } 45% { opacity: 0.75; } 70% { opacity: 0.3; } }
+@keyframes azyArtSweep  { 0% { transform: translateY(-24px); } 14%, 100% { transform: translateY(240px); } }
+@keyframes azyArtHover  { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-3px); } }
+@keyframes azyArtPlayhead { 0% { transform: translateX(0); opacity: 0; }
+  6% { opacity: 0.85; } 46% { transform: translateX(84px); opacity: 0.85; }
+  52% { transform: translateX(84px); opacity: 0; } 100% { transform: translateX(84px); opacity: 0; } }
+
+/* one-shot strand formation */
+.azy-art-draw   { stroke-dasharray: 460; stroke-dashoffset: 460; animation: azyArtDraw calc(1.5s * var(--azy-speed-k, 1)) var(--azy-ease, ease-out) calc(0.15s * var(--azy-speed-k, 1)) forwards; }
+.azy-art-draw-2 { animation-delay: calc(0.45s * var(--azy-speed-k, 1)); }
+.azy-art-draw-3 { animation-delay: calc(0.75s * var(--azy-speed-k, 1)); }
+
+/* light travelling along a single strand, long calm loop */
+.azy-art-travel   { animation: azyArtTravel calc(5.2s * var(--azy-speed-k, 1)) linear calc(1.6s * var(--azy-speed-k, 1)) infinite; }
+.azy-art-travel-2 { animation-duration: calc(7.4s * var(--azy-speed-k, 1)); animation-delay: calc(3.1s * var(--azy-speed-k, 1)); }
+
+/* breathing glows + nodes */
+.azy-art-breathe      { animation: azyArtBreathe calc(6.5s * var(--azy-speed-k, 1)) ease-in-out infinite; }
+.azy-art-breathe-slow { animation: azyArtBreathe calc(9s * var(--azy-speed-k, 1)) ease-in-out infinite; }
+.azy-art-node-b       { animation: azyArtBreathe calc(3.8s * var(--azy-speed-k, 1)) ease-in-out infinite; }
+.azy-art-node-b2      { animation-delay: calc(1.3s * var(--azy-speed-k, 1)); }
+.azy-art-node-b3      { animation-delay: calc(2.4s * var(--azy-speed-k, 1)); }
+
+/* particles */
+.azy-art-tw   { animation: azyArtTwinkle calc(4.6s * var(--azy-speed-k, 1)) ease-in-out infinite; }
+.azy-art-tw-2 { animation-delay: calc(1.7s * var(--azy-speed-k, 1)); animation-duration: calc(5.4s * var(--azy-speed-k, 1)); }
+.azy-art-tw-3 { animation-delay: calc(3.2s * var(--azy-speed-k, 1)); animation-duration: calc(6.2s * var(--azy-speed-k, 1)); }
+
+/* entity + tool life */
+.azy-art-spider-body { animation: azyArtHover calc(7s * var(--azy-speed-k, 1)) ease-in-out infinite; }
+.azy-art-float       { animation: azyArtHover calc(6s * var(--azy-speed-k, 1)) ease-in-out infinite; }
+.azy-art-sweep       { animation: azyArtSweep calc(7s * var(--azy-speed-k, 1)) ease-in-out calc(2s * var(--azy-speed-k, 1)) infinite; }
+.azy-art-playhead    { animation: azyArtPlayhead calc(11s * var(--azy-speed-k, 1)) ease-in-out calc(3s * var(--azy-speed-k, 1)) infinite; }
+
+/* ---- placement: welcome dialog → AZY WEB CORE --------------- */
+/* The card becomes the cinematic moment: the web fills the glass behind the
+   checklist, masked to fade into the card's own darkness. z-index -1 keeps it
+   under the text while the card's stacking context keeps it above the backdrop. */
+.welcome { position: relative; overflow: hidden; }
+.welcome-art {
+  position: absolute;
+  inset: -18% -32%;
+  z-index: -1;
+  opacity: 0.34;
+  width: auto; height: auto;
+}
+
+/* ---- placement: empty states -------------------------------- */
+/* Artwork rings the existing orb — a small themed piece behind the icon that
+   draws itself once when the empty state appears. The orb and copy stay exactly
+   where they were; the layer is absolutely positioned and never affects layout. */
+.empty-state { position: relative; }
+.empty-art {
+  position: absolute;
+  top: 50%; left: 50%;
+  width: 184px; height: 184px;
+  margin: -118px 0 0 -92px;   /* centred on the orb (orb sits 26px above the copy) */
+  opacity: 0.24;
+  z-index: 0;
+}
+.empty-state > *:not(.empty-art) { position: relative; z-index: 1; }
+
+/* ---- placement: Settings › About → DIGITAL SPIDER ----------- */
+.about-art-card {
+  position: relative;
+  display: grid;
+  place-items: center;
+  min-height: 190px;
+  padding: 14px;
+  border: 1px solid var(--azy-accent-border, rgba(var(--hue-rgb), 0.42));
+  border-radius: var(--azy-r-lg, 14px);
+  background:
+    radial-gradient(90% 70% at 50% 30%, var(--azy-accent-muted, rgba(var(--hue-rgb), 0.14)), transparent 70%),
+    var(--azy-surface-card, rgba(14, 14, 14, 0.6));
+  overflow: hidden;
+}
+.about-art { width: min(240px, 78%); height: auto; opacity: 0.9; }
+.about-grid { display: grid; grid-template-columns: minmax(200px, 280px) 1fr; gap: 14px; align-items: start; }
+.about-copy .snap-setting-title { margin-bottom: 2px; }
+.about-pieces { list-style: none; margin: 10px 0 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.about-pieces li { display: flex; gap: 8px; align-items: baseline; font-size: 10.5px; color: var(--azy-text-2, #bdbdbd); }
+.about-pieces b { font-size: 10.5px; color: var(--azy-text-1, #f1f1f1); font-weight: 650; min-width: 78px; }
+.about-links { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
+
+/* ---- placement: Speed prompt → AZY DAGGER (watermark) ------- */
+/* The card already has its accent border + glass; the dagger floats behind the
+   slider as a quiet watermark in the corner, never under the text column. */
+.speed-art {
+  position: absolute;
+  top: -14px; right: -14px;
+  width: 96px; height: 96px;
+  opacity: 0.16;
+  z-index: 0;
+}
+.azy-speed-prompt-card > *:not(.speed-art) { position: relative; z-index: 1; }
+
+/* ---- placement: ambient corner fragment (main window) ------- */
+/* Extremely subtle web geometry in the bottom-right of the app frame — the
+   "unused space" piece. Fixed so it never scrolls or reflows with the panes,
+   masked to dissolve into the background, hidden when the window is small. */
+.azy-art-corner {
+  position: fixed;
+  right: -70px; bottom: -78px;
+  width: 280px; height: 280px;
+  z-index: 0;
+  opacity: 0.13;
+  -webkit-mask-image: radial-gradient(85% 85% at 62% 38%, #000 30%, rgba(0,0,0,0.5) 58%, transparent 80%);
+  mask-image: radial-gradient(85% 85% at 62% 38%, #000 30%, rgba(0,0,0,0.5) 58%, transparent 80%);
+}
+
+/* ---- placement: opt-in spider motif → WEB MATRIX ------------ */
+/* The existing Settings › Spider motif switch gains the ecosystem web as a
+   fixed full-window layer under everything, at whisper opacity. */
+.spider-mode .azy-art-matrix-veil {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  width: 100%; height: 100%;
+  opacity: 0.07;
+}
+
+/* ---- responsive: artwork yields to the layout ---------------- */
+/* Small window: shrink the ambient + empty-state pieces. */
+@media (max-width: 560px) {
+  .empty-art { width: 140px; height: 140px; margin: -96px 0 0 -70px; opacity: 0.18; }
+  .azy-art-corner { width: 200px; height: 200px; right: -60px; bottom: -66px; opacity: 0.1; }
+  .about-grid { grid-template-columns: 1fr; }
+}
+/* Very narrow: decorative artwork disappears entirely — controls keep every pixel.
+   (Same breakpoint the nav uses to fold its labels.) */
+@media (max-width: 430px) {
+  .empty-art, .azy-art-corner, .speed-art, .welcome-art { display: none; }
+}
+/* Tall enough windows let the welcome web be a little more present. */
+@media (min-height: 620px) and (min-width: 431px) {
+  .welcome-art { opacity: 0.4; }
+}
+
+/* ---- kill switches: motion yields to the machine ------------- */
+/* (1) the user asked for reduced motion,
+   (2) Azy is under heavy processing (html.azy-art-off, set by the renderer),
+   (3) artwork is globally disabled.
+   Static artwork stays; only movement stops. */
+@media (prefers-reduced-motion: reduce) {
+  .azy-art *, .welcome-art, .empty-art, .speed-art, .azy-art-corner { animation: none !important; }
+  .azy-art-draw { stroke-dashoffset: 0; }
+}
+html.azy-art-off .azy-art *,
+html.azy-art-off .welcome-art,
+html.azy-art-off .empty-art,
+html.azy-art-off .speed-art,
+html.azy-art-off .azy-art-corner,
+html.azy-art-off .spider-mode .azy-art-matrix-veil { animation: none !important; }
+html.azy-art-off .azy-art-draw { stroke-dashoffset: 0; }

@@ -1,0 +1,8 @@
+<!-- Azy logo — vector source. Matches assets/icon-*.png / icon.ico -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128">
+  <rect x="0" y="0" width="128" height="128" rx="30" fill="#0a0a0a"/>
+  <rect x="1.5" y="1.5" width="125" height="125" rx="28.5" fill="none" stroke="#2b2b2b" stroke-width="3"/>
+  <path d="M64 30 L94 92 L80 92 L74.5 79 L53.5 79 L48 92 L34 92 Z M64 46.5 L57 66 L71 66 Z"
+        fill="#ffffff" fill-rule="evenodd"/>
+  <circle cx="94" cy="34" r="6.5" fill="#ffffff"/>
+</svg>

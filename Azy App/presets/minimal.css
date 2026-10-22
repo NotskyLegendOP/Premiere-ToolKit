@@ -1,0 +1,498 @@
+/* Shared compact layout, loaded after sector skins. These rules intentionally own geometry:
+   dedicated windows and the all-in-one must not disagree about a control or thumbnail's size.
+   Native workspace enter/leave classes are left to workspaces.css. */
+.sr-only { position: absolute !important; width: 1px !important; height: 1px !important; padding: 0 !important; margin: -1px !important; overflow: hidden !important; clip-path: inset(50%); white-space: nowrap; border: 0 !important; }
+body.minimal-ui {
+  --text: #e8e8e8; --dim: #afafaf; --faint: #818181;
+  --line: rgba(208, 208, 208, .10); --line-hi: rgba(208, 208, 208, .22);
+  --raised: rgba(208, 208, 208, .045); --raised-hi: rgba(var(--hue-rgb, 214, 40, 63),.10);
+  background: #0f0f0f;
+}
+.minimal-ui .aurora { display: none; }
+.minimal-ui #app { width: 100%; min-width: 0; background: #0f0f0f; }
+.minimal-ui #app [hidden] { display: none !important; }
+.minimal-ui #app .pane { min-width: 0; width: 100%; background: none; }
+/* No translated pane children, staggered tiles or pulsing borders during ordinary browsing. */
+.minimal-ui #app .pane, .minimal-ui #app .pane > *, .minimal-ui #app .file-card,
+.minimal-ui #app .settings-group { animation: none; }
+.minimal-ui #app .pane { transform: none; }
+.minimal-ui #app .drag-handle { height: 10px; min-height: 10px; padding: 3px; }
+.minimal-ui #app .grabber { height: 2px; width: 32px; background: var(--dim); opacity: .4; box-shadow: none; }
+.minimal-ui #app .app-chrome { padding: 3px 12px 7px; gap: 10px; min-height: 30px; }
+.minimal-ui #app .brand-mark { border: 0; background: none; }
+.minimal-ui #app .brand-word { font-size: 12px; letter-spacing: .08em; }
+.minimal-ui:not(.is-dedicated) #app .workspace-copy { visibility: hidden; }
+.minimal-ui #app .workspace-title { color: var(--dim); font-size: 11px; }
+.minimal-ui #app .mode-row { display: flex; padding: 0 10px 8px; gap: 4px; }
+.minimal-ui.is-dedicated #app .mode-row { display: none; }
+.minimal-ui #app .mode-tab { flex: 1; min-width: 0; justify-content: center; padding: 7px 5px; font-size: var(--azy-fs-body); font-weight: var(--azy-fw-med); box-shadow: none; transform: none; } /* optical: hero height budget */
+.minimal-ui #app .mode-pill { border-radius: 7px; background: var(--raised-hi); box-shadow: none; border: 1px solid var(--line-hi); transition: none; }
+.minimal-ui #app .mode-tab::after { display: none; }
+.minimal-ui #app :is(.section-hero,.settings-hero) { min-height: 42px; padding: 6px 12px; align-items: center; gap: 8px; background: none; border-bottom: 1px solid var(--line); box-shadow: none; }
+.minimal-ui #app :is(.section-hero,.settings-hero)::before,
+.minimal-ui #app :is(.section-hero,.settings-hero)::after { display: none; }
+.minimal-ui #app :is(.section-hero,.settings-hero) h1 { margin: 0; font-size: 13px; font-weight: 600; color: var(--text); line-height: 1.4; }
+.minimal-ui #app .preset-hero-actions { flex-direction: row; gap: 8px; }
+.minimal-ui #app .preset-connection-pill { display: none; } /* shared connection footer owns this */
+.minimal-ui #app :is(.hero-action,.chip,.pin-btn,.icon-btn,.text-action,.file-view-btn) { box-shadow: none; text-shadow: none; background: transparent; border-color: var(--line); color: var(--dim); font-weight: 500; transform: none; }
+.minimal-ui #app :is(.hero-action,.chip) { border-radius: 7px; min-height: 28px; padding: 4px 8px; font-size: 11px; }
+.minimal-ui #app :is(.hero-action,.chip,.pin-btn,.icon-btn,.text-action,.file-view-btn):hover:not(:disabled) { background: var(--raised-hi); color: var(--text); box-shadow: none; transform: none; }
+.minimal-ui #app :is(.chip.active,.file-view-btn.active,.preview-toggle.on,.pin-btn.pinned) { background: var(--raised-hi); color: var(--accent); border-color: var(--line-hi); }
+.minimal-ui #app .rack-label { display: none; }
+.minimal-ui #app .pins-strip { min-height: 34px; padding: 4px 12px; gap: 6px; }
+.minimal-ui #app .toolbar { display: flex; align-items: center; min-width: 0; gap: 5px; min-height: 38px; padding: 4px 10px; background: none; border-top: 0; }
+/* Missing in the previous build: without flex, the icon wrappers became 120px-tall columns. */
+.minimal-ui #app .toolbar-actions { display: flex; flex: 0 0 auto; align-items: center; gap: 4px; }
+.minimal-ui #app .icon-btn { display: inline-flex; align-items: center; justify-content: center; min-height: 28px; flex-shrink: 0; border-radius: 6px; }
+.minimal-ui #app .breadcrumb { min-width: 0; text-align: left; justify-content: flex-start; font-size: 11px; }
+.minimal-ui #app .breadcrumb .crumb { white-space: nowrap; }
+.minimal-ui #app :is(.files-command-bar,.preset-command-bar,.flow-command-bar) { display: flex; flex-wrap: wrap; padding: 6px 12px; gap: 8px; background: none; min-width: 0; }
+.minimal-ui #app :is(.files-search-row,.preset-search-row,.flow-search-row) { flex: 1 1 100px; min-width: 0; padding: 0; gap: 6px; background: none; border: 0; }
+.minimal-ui #app .search-input { width: 100%; min-width: 0; min-height: 30px; padding: 5px 8px; color: var(--text); background: var(--raised); border: 1px solid var(--line); border-radius: 6px; box-shadow: none; font-size: 11px; }
+.minimal-ui #app .search-input::placeholder { color: var(--dim); opacity: .7; }
+.minimal-ui #app .files-command-actions { gap: 7px; }
+.minimal-ui #app .file-sort-control select { width: 83px; max-width: 100%; min-height: 28px; color-scheme: dark; border-radius: 6px; background: #181818; }
+.minimal-ui #app .file-view-btn { width: 28px; height: 28px; border-radius: 6px; }
+.minimal-ui #app .files-utility-row { padding: 4px 12px 6px; }
+.minimal-ui #app .file-filter { background: none; border: 0; padding: 0; gap: 3px; }
+.minimal-ui #app .file-filter-btn { border-radius: 6px; padding: 5px 8px; font-size: 11px; }
+.minimal-ui #app .count-pill { font-size: 10px; color: var(--dim); }
+.minimal-ui #app .files-explorer-shell { min-width: 0; }
+.minimal-ui #app .files-list-sidebar { flex: 0 0 112px; padding: 10px 6px; gap: 16px; background: none; }
+.minimal-ui #app .is-list-view .files-source-rack { display: none; }
+.minimal-ui #app .files-sidebar-head { color: var(--dim); font-size: 9px; }
+.minimal-ui #app .files-sidebar-nav-item { min-height: 28px; padding: 5px; font-size: 11px; }
+.minimal-ui #app .files-sidebar-label { font-size: 9px; line-height: 1.4; }
+/* Base tile geometry; Files row geometry is owned by the final block below. */
+.minimal-ui #app :is(#fileGrid,#presetGrid,#flowGrid) { display: grid; grid-template-columns: repeat(auto-fill,minmax(96px,1fr)); align-content: start; align-items: start; min-width: 0; min-height: 0; padding: 10px 12px; gap: 10px; background: none; }
+.minimal-ui #app :is(#fileGrid,#presetGrid,#flowGrid) .file-card { display: flex; flex-direction: column; align-items: stretch; height: auto; min-height: 0; min-width: 0; padding: 4px; gap: 6px; border: 1px solid transparent; border-radius: 8px; background: none; box-shadow: none; transform: none; transition: background-color calc(.12s * var(--azy-speed-k, 1)), border-color calc(.12s * var(--azy-speed-k, 1)); }
+.minimal-ui #app :is(#fileGrid,#presetGrid,#flowGrid) .file-card:hover { background: var(--raised); border-color: var(--line); transform: none; box-shadow: none; }
+.minimal-ui #app #fileGrid .file-card.selected { background: var(--raised-hi); border-color: var(--accent); }
+.minimal-ui #app :is(#fileGrid,#presetGrid,#flowGrid) .thumb { width: 100%; height: auto; aspect-ratio: 1 / 1; border-radius: 6px; background: var(--raised); }
+.minimal-ui #app :is(#fileGrid,#presetGrid,#flowGrid) .file-name { width: 100%; margin: 0; padding: 0; color: var(--text); font: 11px/1.4 'Segoe UI',sans-serif; text-align: left; letter-spacing: 0; text-transform: none; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; overflow-wrap: anywhere; white-space: normal; min-height: 30px; }
+.minimal-ui #app #fileGrid.file-grid--list { grid-template-columns: minmax(0,1fr); gap: 3px; }
+.minimal-ui #app #fileGrid.file-grid--list .file-card { display: grid; grid-template-columns: 48px minmax(0,1fr); align-items: center; gap: 10px; height: auto; min-height: 58px; padding: 4px; }
+.minimal-ui #app #fileGrid.file-grid--list .thumb { width: 48px; height: 48px; }
+.minimal-ui #app #fileGrid.file-grid--list .file-name { min-height: 0; }
+.minimal-ui #app .empty-state { grid-column: 1/-1; min-width: 0; padding: 30px 12px; gap: 12px; color: var(--dim); text-align: center; }
+.minimal-ui #app .empty-orb { background: var(--raised); box-shadow: none; border: 1px solid var(--line); }
+.minimal-ui #app .flow-hero-target { flex: 1; min-width: 0; max-width: 65%; width: auto; padding: 0; border: 0; background: none; box-shadow: none; align-items: flex-end; }
+.minimal-ui #app .flow-hero-target .flow-target { min-width: 0; font-size: 10px; }
+.minimal-ui #app .flow-hero-target .flow-target-text { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.minimal-ui #app .flow-editor { overflow-y: auto; min-height: 0; flex: 1 1 0; margin: 8px 12px 10px; padding: 10px; background: #171717; box-shadow: none; }
+.minimal-ui #app .flow-editor-head::before { display: none; }
+.minimal-ui #app .flow-curve { flex-wrap: wrap; }
+.minimal-ui #app .settings-rail { flex: 0 0 110px; padding: 8px 5px; background: none; }
+.minimal-ui #app .settings-cat { min-height: 36px; padding: 5px; }
+.minimal-ui #app .settings-cat em { display: none; }
+.minimal-ui #app .settings-cat-icon { border: 0; background: none; }
+.minimal-ui #app .settings-cat.active { background: var(--raised-hi); box-shadow: none; }
+.minimal-ui #app .settings-body { padding: 8px 12px 20px; background: none; }
+.minimal-ui #app .settings-h { font-size: 10px; font-weight: 600; letter-spacing: .04em; margin-top: 14px; }
+.minimal-ui #app .settings-h::after { display: none; }
+.minimal-ui #app .snap-setting { background: none; box-shadow: none; border: 0; border-bottom: 1px solid var(--line); border-radius: 0; padding: 10px 0; gap: 8px; min-width: 0; }
+.minimal-ui #app .snap-setting-title { font-size: 12px; }
+.minimal-ui #app .snap-setting-desc { font-size: 11px; color: var(--dim); line-height: 1.5; }
+.minimal-ui #app .snap-setting-text { min-width: 0; }
+.minimal-ui #app .snap-seg { flex-wrap: wrap; max-width: 100%; }
+.minimal-ui #app .snap-seg-btn { min-height: 28px; }
+.minimal-ui #app .snap-switch { flex-shrink: 0; }
+.minimal-ui #app .statusbar { min-height: 30px; padding: 4px 10px; background: #0f0f0f; gap: 8px; }
+.minimal-ui #app .status-conn { min-width: 0; max-width: 65%; }
+.minimal-ui #app .status-hint { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.minimal-ui #app .pin-toggle { box-shadow: none; background: var(--raised); font-size: 10px; }
+.minimal-ui #app :is(button,input,select):focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+/* Palette and Speed keep their small native dimensions, without the long reveal choreography. */
+.snap-body .aurora { display: none; }
+.snap-body .snap-head, .snap-body .snap-foot { background: #131313; box-shadow: none; }
+.snap-body .snap, .snap-body .speed-main { background: #0f0f0f; }
+.snap-body .reveal, .snap-body .reveal > *, .snap-body .snap-row { animation: none; }
+.snap-body .snap-row { box-shadow: none; }
+.snap-body .snap-row.active { background: var(--raised-hi); }
+@media (max-width: 430px) {
+  .minimal-ui #app .files-list-sidebar { flex-basis: 86px; }
+  .minimal-ui #app .settings-rail { flex-basis: 42px; }
+  .minimal-ui #app .settings-cat > span:last-child { display: none; }
+  .minimal-ui #app .files-command-bar { gap: 5px; }
+  .minimal-ui #app .files-search-row { flex-basis: 100%; }
+  .minimal-ui #app .files-command-actions { width: 100%; justify-content: space-between; }
+  .minimal-ui #app .file-sort-control > span { display: inline; }
+  .minimal-ui #app .pin-btn span { display: none; }
+  .minimal-ui #app .pin-btn { width: 28px; min-width: 28px; padding: 5px; }
+  .minimal-ui #app .flow-toolbar { flex-wrap: wrap; }
+  .minimal-ui #app .snap-setting { flex-wrap: nowrap; }
+}
+/* The gliding indicator is the active state: accent-tinted glass behind the
+   tab, thin accent border, controlled glow. Tabs themselves stay calm. */
+.minimal-ui #app .mode-pill {
+  display: block;
+  background: var(--azy-accent-muted);
+  border: 1px solid var(--azy-accent-border);
+  border-radius: var(--azy-r-sm);
+  box-shadow: 0 0 14px -6px rgba(var(--azy-glow-rgb-user, var(--hue-rgb, 214, 40, 63)), calc(0.5 * var(--azy-glow-k, 1)));
+  transition: transform var(--azy-dur-2) var(--azy-ease-out), width var(--azy-dur-2) var(--azy-ease-out);
+}
+.minimal-ui #app .mode-tab { position: relative; z-index: 1; background: none; border: 1px solid transparent; border-radius: var(--azy-r-xs); transition: background-color var(--azy-dur-1) var(--azy-ease), color var(--azy-dur-1) var(--azy-ease); }
+.minimal-ui #app .mode-tab:hover:not(.active) { background: var(--azy-surface-raise); }
+.minimal-ui #app .mode-tab.active { background: transparent; border-color: transparent; color: var(--azy-text-1); }
+.minimal-ui #app .mode-tab.active svg { color: var(--azy-accent); filter: drop-shadow(0 0 6px rgba(var(--azy-glow-rgb-user, var(--hue-rgb, 214, 40, 63)), calc(0.55 * var(--azy-glow-k, 1)))); }
+.minimal-ui #app .breadcrumb { direction: ltr; }
+.minimal-ui #app .crumb { border: 0; background: none; font-family: inherit; }
+.minimal-ui #app .crumb:hover { background: var(--raised); }
+.minimal-ui #app .flow-toolbar { justify-content: space-between; }
+.minimal-ui:not(.ws-enter):not(.ws-leave) #app { animation: none; }
+.minimal-ui #app .toast { padding: 8px 12px; border-radius: 7px; background: #202020; border: 1px solid var(--line-hi); box-shadow: none; font-size: 11px; }
+.minimal-ui #app .azy-scope-btn.active { background: var(--raised-hi); color: var(--text); box-shadow: none; }
+
+/* Focused editing: the library no longer competes with the curve editor for the same height. */
+.minimal-ui #app #flowGrid.is-editing { display: none; }
+.minimal-ui #app .flow-editor > * { flex-shrink: 0; }
+.minimal-ui #app .flow-scope-note { margin: 0; padding: 9px 12px; color: var(--azy-text-2); background: rgba(var(--hue-rgb), .06); border-bottom: 1px solid var(--line); font-size: 11px; line-height: 1.5; }
+.minimal-ui #app .azy-scope { display: flex; max-width: 100%; padding: 3px; gap: 3px; background: var(--raised); border-color: var(--line); border-radius: 7px; }
+.minimal-ui #app .azy-scope-btn { min-height: 28px; padding: 5px 8px; border-radius: 5px; font-size: 11px; color: var(--dim); }
+.minimal-ui #app .azy-scope-btn.active { color: var(--accent); background: var(--raised-hi); }
+.minimal-ui #app .scope-unavailable::after { content: '·'; margin-left: 4px; color: var(--hue); }
+.minimal-ui #app .flow-card[aria-disabled="true"] { cursor: not-allowed; }
+.minimal-ui #app .flow-card[aria-disabled="true"] .flow-glyph { opacity: .45; }
+.minimal-ui #app .flow-target.is-warn .flow-target-dot { animation: none; }
+.minimal-ui #app .flow-curve-nums { grid-template-columns: repeat(3,minmax(0,1fr)); gap: 8px; }
+.minimal-ui #app .flow-curve-nums input:not([type="checkbox"]) { width: 100%; min-width: 0; }
+.minimal-ui #app .flow-group { color: var(--dim); font-size: 10px; letter-spacing: .06em; }
+.minimal-ui #app :is(.mode-tab,.settings-cat,.icon-btn,.chip,.search-input,.azy-scope-btn,.snap-seg-btn) { transition-duration: calc(.12s * var(--azy-speed-k, 1)); }
+.minimal-ui #app .icon-btn:not(.pin-btn):not(.on):not(:hover):not(:focus-visible) { border-color: transparent; }
+.minimal-ui #app .file-card:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.minimal-ui #app .file-card:focus-within :is(.fav-badge,.wheel-badge,.flow-edit-badge) { opacity: 1; }
+.minimal-ui #app .file-name { -webkit-font-smoothing: antialiased; }
+@media (max-width: 430px) {
+  .minimal-ui #app .flow-hero { flex-wrap: wrap; }
+  .minimal-ui #app .flow-hero-target { max-width: 100%; }
+  .minimal-ui #app .flow-curve { grid-template-columns: minmax(0,1fr); }
+  .minimal-ui #app .flow-graph-wrap { width: 100%; max-width: 270px; margin-inline: auto; }
+  .minimal-ui #app .flow-curve-side { min-width: 0; }
+  .minimal-ui #app .flow-curve-nums { grid-template-columns: repeat(3,minmax(0,1fr)); }
+  .minimal-ui #app .flow-interp-grid { grid-template-columns: minmax(0,1fr); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .minimal-ui #app :is(.mode-tab,.settings-cat,.icon-btn,.chip,.search-input,.azy-scope-btn,.snap-seg-btn) { transition: none; }
+}
+
+/* Intrinsic-size containment underestimates aspect-ratio cards during grid track sizing.
+   Flow/Presets are small libraries: measure their real height, never a 120px placeholder. */
+.minimal-ui #app :is(#fileGrid,#flowGrid,#presetGrid) { grid-auto-rows: max-content; }
+.minimal-ui #app :is(#flowGrid,#presetGrid) .file-card { contain: none; content-visibility: visible; contain-intrinsic-size: none; }
+.minimal-ui #app :is(#flowGrid,#presetGrid) .thumb { flex-shrink: 0; }
+.minimal-ui #app #flowGrid .flow-group { position: static; grid-column: 1 / -1; min-height: 24px; margin: 0; padding: 5px 1px; }
+
+/* A quiet glass shell. Static gradients and translucent layers, not live backdrop capture;
+   no animated backdrops or per-card filters in large media folders. */
+.minimal-ui #app {
+  --text: #ececec; --dim: #b2b2b2; --faint: #8f8f8f;
+  --line: rgba(var(--hue-rgb), .10); --line-hi: rgba(var(--hue-rgb), .20);
+  background: radial-gradient(ellipse at 0% 0%,rgba(var(--hue-rgb, 214, 40, 63),.095),transparent 55%),
+    radial-gradient(ellipse at 100% 80%,rgba(var(--hue2-rgb, 160, 30, 48),.06),transparent 60%),
+    linear-gradient(155deg,#181818 0%,#101010 50%,#0c0c0c 100%);
+  box-shadow: inset 0 0 0 1px rgba(var(--hue-rgb), .11), inset 0 1px rgba(var(--hue-rgb), .07);
+}
+/* The mark floats on the chrome itself: no chip, no ring — a boxed logo read as a
+   black patch against the title strip instead of blending into it. */
+.minimal-ui #app .brand-mark { color: var(--accent); border: 0; background: none; border-radius: 0; width: 18px; height: 18px; }
+.minimal-ui #app .mode-tab { border-radius: 8px; color: var(--dim); }
+.minimal-ui #app .mode-tab.active { color: var(--accent); border-color: rgba(var(--hue-rgb, 214, 40, 63),.26); background: linear-gradient(145deg,rgba(var(--hue-rgb, 214, 40, 63),.14),rgba(var(--hue-rgb, 214, 40, 63),.05)); box-shadow: inset 0 1px rgba(255,255,255,.05); }
+.minimal-ui #app :is(.section-hero,.settings-hero) { background: linear-gradient(110deg,rgba(var(--hue-rgb), .025),transparent); }
+.minimal-ui #app :is(.hero-action,.chip,.icon-btn,.pin-btn,.file-view-btn) { border-radius: 8px; }
+.minimal-ui #app :is(.search-input,.file-sort-control select) { background: rgba(9, 9, 9, .44); border-color: var(--line-hi); border-radius: 8px; }
+.minimal-ui #app .search-input:focus { border-color: rgba(var(--hue-rgb, 214, 40, 63),.6); box-shadow: 0 0 0 3px rgba(var(--hue-rgb, 214, 40, 63),.07); }
+.minimal-ui #app .search-input:focus-visible { outline: none; }
+.minimal-ui #app :is(#presetGrid,#flowGrid) .thumb { border-color: rgba(var(--hue-rgb), .12); background: radial-gradient(ellipse at 20% 0%,rgba(var(--hue-rgb, 214, 40, 63),.07),transparent 80%),linear-gradient(150deg,rgba(var(--hue-rgb), .045),rgba(8, 8, 8, .36)); }
+.minimal-ui #app :is(#presetGrid,#flowGrid) .thumb { border-radius: 10px; }
+.minimal-ui #app :is(#presetGrid,#flowGrid) .file-card:hover { border-color: rgba(var(--hue-rgb, 214, 40, 63),.22); background: rgba(var(--hue-rgb, 214, 40, 63),.025); }
+.minimal-ui #app :is(.wheel-badge,.fav-badge,.flow-edit-badge) { background: rgba(18, 18, 18, .94); box-shadow: none; filter: none; border: 1px solid rgba(var(--hue-rgb, 214, 40, 63),.27); }
+.minimal-ui #app .flow-editor { background: linear-gradient(140deg,rgba(var(--hue-rgb), .055),rgba(11, 11, 11, .8)); border-color: var(--line-hi); border-radius: 12px; }
+.minimal-ui #app .settings-cat.active { background: linear-gradient(120deg,rgba(var(--hue-rgb, 214, 40, 63),.12),rgba(var(--hue-rgb, 214, 40, 63),.04)); border-color: rgba(var(--hue-rgb, 214, 40, 63),.18); }
+.minimal-ui #app .theme-seg { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); width: 100%; gap: 5px; padding: 5px; background: rgba(9, 9, 9, .25); border: 1px solid var(--line); border-radius: 10px; }
+.minimal-ui #app .theme-seg .snap-seg-btn { justify-content: flex-start; padding: 7px; min-width: 0; font-size: 10px; border-radius: 6px; }
+.minimal-ui #app .theme-seg .snap-seg-btn.active { color: var(--accent); background: rgba(var(--hue-rgb, 214, 40, 63),.10); box-shadow: inset 0 0 0 1px rgba(var(--hue-rgb, 214, 40, 63),.22); }
+.minimal-ui #app .statusbar { background: rgba(12, 12, 12, .82); border-top: 1px solid var(--line); }
+.minimal-ui #app .pin-toggle { border-color: rgba(var(--hue-rgb, 214, 40, 63),.2); background: rgba(var(--hue-rgb, 214, 40, 63),.06); }
+.minimal-ui #app .media-caption { min-width: 0; display: flex; flex-direction: column; gap: 5px; }
+.minimal-ui #app .media-card-meta { display: flex; align-items: center; gap: 5px; color: var(--dim); font-size: 9px; letter-spacing: .055em; text-transform: uppercase; white-space: nowrap; overflow: hidden; }
+.minimal-ui #app .media-card-meta::before { content: ''; width: 4px; height: 4px; flex: 0 0 auto; border-radius: 50%; background: var(--accent); opacity: .65; }
+.minimal-ui #app #fileGrid :is(.file-card--video, .file-card--audio) .play-badge { width: 24px; height: 24px; right: 7px; bottom: 7px; background: rgba(15, 15, 15, .88); border: 1px solid rgba(var(--hue-rgb, 214, 40, 63),.35); color: var(--accent); box-shadow: none; }
+
+.minimal-ui #app #fileGrid .file-card.selected { border-color: var(--accent); background-color: rgba(var(--hue-rgb, 214, 40, 63),.08); }
+html:not([data-section="files"]) .minimal-ui #previewPanel { display: none; }
+@media (max-width: 580px) {
+  .minimal-ui #app .theme-seg { grid-template-columns: repeat(2,minmax(0,1fr)); }
+}
+@media (max-width: 430px) {
+  .minimal-ui #app .media-card-meta { font-size: 8px; letter-spacing: 0; }
+}
+
+/* v1.1.5: compact, shared header rows. Wrapping is a narrow-window safety valve only. */
+.minimal-ui #app .compact-header { display: flex; flex-wrap: nowrap; min-height: 44px; padding: 6px 10px; align-items: center; gap: 7px; } /* optical: narrow-window row budget */
+.minimal-ui #app .compact-header .section-hero-copy { flex: 1; min-width: 0; }
+.minimal-ui #app .compact-header h1 { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: var(--azy-fs-panel); font-weight: var(--azy-fw-semi); }
+.minimal-ui #app .files-hero .files-toolbar,
+.minimal-ui #app .flow-hero .flow-toolbar { display: contents; }
+.minimal-ui #app .files-hero .hero-action { order: 4; }
+.minimal-ui #app .files-hero .toolbar-actions { gap: 3px; }
+.minimal-ui #app .presets-hero .preset-source-rack { min-width: 0; flex: 1; border: 0; background: none; }
+.minimal-ui #app .presets-hero .pins-strip { min-height: 28px; padding: 0; }
+.minimal-ui #app .flow-hero .section-hero-copy { flex: 0 1 auto; }
+.minimal-ui #app .flow-hero-target { flex: 0 0 auto; width: auto; max-width: none; order: 2; margin-left: auto; }
+.minimal-ui #app .flow-hero .toolbar-actions { order: 3; }
+.minimal-ui #app .flow-hero .flow-target { padding: 4px; }
+.minimal-ui #app .flow-hero .flow-target-text { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+/* Every Files item uses the same old, spacious thumbnail row. Grid/List still toggles Explorer. */
+.minimal-ui #app #fileGrid { grid-template-columns: minmax(0,1fr); gap: 8px; }
+.minimal-ui #app #fileGrid .file-card {
+  display: grid; grid-template-columns: clamp(88px,38%,176px) minmax(0,1fr); grid-column: 1 / -1;
+  align-items: center; gap: 14px; height: auto; min-height: 72px; padding: 7px;
+  border: 1px solid rgba(var(--hue-rgb),.12); border-radius: var(--azy-r-md);
+  background: color-mix(in srgb, var(--surface, #0e0e0e) 38%, transparent);
+  contain: layout paint style; content-visibility: auto; contain-intrinsic-size: auto 100px;
+}
+.minimal-ui #app #fileGrid .file-card .thumb { width: 100%; height: auto; aspect-ratio: 2 / 1; border-radius: var(--azy-r-sm); }
+.minimal-ui #app #fileGrid .file-card .file-name { min-height: 0; color: var(--accent-3); font-size: var(--azy-fs-card); font-weight: var(--azy-fw-semi); line-height: 1.45; }
+.minimal-ui #app #fileGrid.file-grid--list .file-card { grid-template-columns: clamp(72px,38%,150px) minmax(0,1fr); gap: 10px; padding: 7px; }
+.minimal-ui #app #fileGrid.file-grid--list .thumb { width: 100%; height: auto; aspect-ratio: 2 / 1; }
+.minimal-ui #app #fileGrid.file-grid--list .file-name { min-height: 0; }
+@media (max-width: 620px) {
+  .minimal-ui #app .flow-hero .section-hero-copy { display: none; }
+  .minimal-ui #app .compact-header .hero-action span { display: none; }
+  .minimal-ui #app .compact-header .hero-action { width: 28px; min-width: 28px; padding: 4px; justify-content: center; }
+}
+@media (max-width: 430px) {
+  .minimal-ui #app .mode-tab span { display: none; }
+  .minimal-ui #app .mode-tab { justify-content: center; padding: 7px 0; }
+  .minimal-ui #app .compact-header { gap: 4px; padding-inline: 8px; }
+  .minimal-ui #app .files-hero .icon-btn { width: 25px; min-width: 25px; padding: 3px; }
+  /* The Media/Sounds switch slims down with the other header icons. */
+  .minimal-ui #app .files-hero .files-section-toggle { padding: 1px; gap: 1px; }
+  .minimal-ui #app .files-hero .files-section-toggle .section-btn { width: 21px; min-width: 21px; height: 23px; padding: 0; }
+  .minimal-ui #app .flow-hero-target { margin-left: auto; }
+  .minimal-ui #app .flow-hero .toolbar-actions { margin-left: auto; }
+  .minimal-ui #app #fileGrid .file-card { gap: 9px; }
+}
+/* Normal widths stay one row. Browser zoom / unusually narrow windows must reflow,
+   rather than clip the wheel or Create control beyond the right edge. */
+.minimal-ui #app .flow-hero.compact-header,
+.minimal-ui #app .files-hero.compact-header { flex-wrap: wrap; }
+
+/* ── v1.3 glass reference refresh ─────────────────────────────────────────────
+   The reference skin: glowing gradient rims, rounded-2xl glass surfaces, gradient
+   active states, pill footer. Pure presentation — every id/class the renderers
+   look up stays exactly where it was. */
+
+/* title bar: gradient logo tile, wide wordmark, kbd chips + window buttons right */
+.minimal-ui #app .app-chrome { padding: 5px 14px 3px; min-height: 32px; gap: 12px; background: var(--azy-surface-nav); border-bottom: 1px solid var(--azy-line-1); }
+.minimal-ui #app .brand-mark { color: var(--azy-accent); }
+.minimal-ui #app .win-btn { transition: background-color var(--azy-dur-1) var(--azy-ease), color var(--azy-dur-1) var(--azy-ease); }
+.minimal-ui #app .win-btn:hover { background: var(--azy-surface-raise-hi); }
+.minimal-ui #app .win-btn:last-child:hover { background: var(--azy-err-muted); color: var(--azy-err); }
+.minimal-ui #app .brand-mark {
+  width: 26px; height: 26px; border-radius: 9px; border: none;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: linear-gradient(135deg, rgb(var(--hue-rgb, 214, 40, 63)), color-mix(in srgb, rgb(var(--hue-rgb, 214, 40, 63)) 62%, #000));
+  color: var(--text-on-accent, #fff);
+  box-shadow: 0 4px 16px rgba(var(--azy-glow-rgb-user, var(--hue-rgb, 214, 40, 63)), calc(0.5 * var(--azy-glow-k, 1)));
+}
+.minimal-ui #app .brand-word { font-size: 12px; font-weight: 800; letter-spacing: 0.3em; color: var(--text); }
+.minimal-ui #app .workspace-copy { display: none; }
+.minimal-ui #app .workspace-shortcut { margin-left: auto; opacity: 0.85; gap: 4px; }
+.minimal-ui #app .workspace-shortcut kbd {
+  padding: 3px 8px; border-radius: 7px; font-size: 10px; font-family: inherit;
+  border: 1px solid var(--line-hi); background: color-mix(in srgb, color-mix(in srgb, rgb(var(--hue-rgb, 214, 40, 63)) 8%, var(--azy-depth-0, #050505)) 60%, transparent); color: var(--dim);
+}
+.minimal-ui #app .win-btns { display: inline-flex; gap: 6px; margin-left: 10px; }
+.minimal-ui #app .win-btn {
+  width: 28px; height: 22px; border-radius: 7px; cursor: pointer;
+  border: 1px solid rgba(255, 255, 255, 0.09); background: rgba(255, 255, 255, 0.05); color: #d3d3d3;
+  display: inline-flex; align-items: center; justify-content: center;
+}
+.minimal-ui #app .win-btn:hover { background: rgba(var(--hue-rgb, 214, 40, 63), 0.18); color: var(--text); }
+.minimal-ui #app #winCloseBtn:hover { background: rgba(255, 82, 100, 0.22); color: var(--text); }
+
+/* nav: four glass segments, gradient glow on the active one */
+.minimal-ui #app .mode-row { gap: 8px; padding: 0 12px 6px; }
+.minimal-ui #app .mode-tab {
+  min-height: 30px; border-radius: 10px; gap: 7px; font-size: 11.5px; font-weight: 600;
+  border: 1px solid var(--line-hi); background: color-mix(in srgb, color-mix(in srgb, rgb(var(--hue-rgb, 214, 40, 63)) 8%, var(--azy-depth-0, #050505)) 50%, transparent); color: var(--dim);
+}
+.minimal-ui #app .mode-tab:hover { color: var(--text); background: rgba(var(--hue-rgb, 214, 40, 63), 0.08); }
+.minimal-ui #app .mode-tab.active {
+  color: var(--text);
+  border-color: rgba(var(--hue-rgb, 214, 40, 63), 0.55);
+  background: linear-gradient(135deg, rgba(var(--hue-rgb, 214, 40, 63), 0.34), rgba(var(--hue-rgb, 214, 40, 63), 0.2));
+  box-shadow: 0 0 18px rgba(var(--azy-glow-rgb-user, var(--hue-rgb, 214, 40, 63)), calc(0.3 * var(--azy-glow-k, 1))), inset 0 1px rgba(255, 255, 255, 0.07);
+}
+/* footer: connection pill left, on-top pill + build right */
+.minimal-ui #app .statusbar { min-height: 30px; padding: 4px 12px; gap: 10px; background: var(--azy-bg-1); border-top: 1px solid var(--azy-line-1); }
+.minimal-ui #app .status-conn { border: 1px solid var(--azy-line-1); background: var(--azy-surface-nav); border-radius: 999px; padding: 2px 10px; font-size: var(--azy-fs-secondary); color: var(--azy-text-2); }
+.minimal-ui #app .status-dot.is-ok { background: var(--azy-ok); box-shadow: 0 0 8px -1px var(--azy-ok); }
+.minimal-ui #app .status-dot.is-warn { background: var(--azy-warn); box-shadow: 0 0 8px -2px var(--azy-warn); }
+.minimal-ui #app .status-dot.is-err { background: var(--azy-err); box-shadow: 0 0 8px -2px var(--azy-err); }
+.minimal-ui #app .status-dot.is-off { background: var(--azy-text-4); box-shadow: none; }
+.minimal-ui #app .status-hint { font-size: var(--azy-fs-secondary); color: var(--azy-text-3); }
+.minimal-ui #app .status-conn {
+  padding: 3px 11px; border-radius: 999px; gap: 7px; font-size: 10.5px;
+  border: 1px solid var(--line-hi); background: color-mix(in srgb, color-mix(in srgb, rgb(var(--hue-rgb, 214, 40, 63)) 8%, var(--azy-depth-0, #050505)) 60%, transparent);
+}
+.minimal-ui #app .pin-toggle { border-radius: 999px; padding: 3px 11px; border-color: var(--line-hi); background: color-mix(in srgb, color-mix(in srgb, rgb(var(--hue-rgb, 214, 40, 63)) 8%, var(--azy-depth-0, #050505)) 60%, transparent); }
+.minimal-ui #app .pin-toggle[aria-pressed="true"] { border-color: rgba(var(--hue-rgb, 214, 40, 63), 0.5); background: rgba(var(--hue-rgb, 214, 40, 63), 0.14); }
+
+/* explorer rail: glass column, section labels, glowing active row */
+.minimal-ui #app .files-list-sidebar { background: rgba(11, 11, 11, 0.55); border-right: 1px solid var(--line); padding: 10px 8px 12px; }
+.minimal-ui #app .files-sidebar-head {
+  display: flex; align-items: center; gap: 8px;
+  padding: 4px 8px 8px; font-size: 12px; font-weight: 750; letter-spacing: 0.02em; color: var(--text);
+}
+.minimal-ui #app .files-sidebar-head::before {
+  content: ''; width: 22px; height: 18px; border-radius: 5px; flex: none;
+  background: linear-gradient(135deg, rgba(var(--hue-rgb, 214, 40, 63), 0.55), rgba(var(--hue-rgb, 214, 40, 63), 0.35));
+  box-shadow: 0 0 10px rgba(var(--azy-glow-rgb-user, var(--hue-rgb, 214, 40, 63)), calc(0.35 * var(--azy-glow-k, 1)));
+}
+.minimal-ui #app .files-sidebar-label { font-size: 9px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--faint); padding: 8px 8px 4px; }
+.minimal-ui #app .files-sidebar-nav-item { min-height: 30px; padding: 6px 8px; border-radius: 9px; font-size: 11px; color: var(--dim); border: 1px solid transparent; }
+.minimal-ui #app .files-sidebar-nav-item:hover { background: rgba(var(--hue-rgb, 214, 40, 63), 0.08); color: var(--text); }
+.minimal-ui #app .files-sidebar-nav-item.active {
+  color: var(--text); border-color: rgba(var(--hue-rgb, 214, 40, 63), 0.45);
+  background: linear-gradient(135deg, rgba(var(--hue-rgb, 214, 40, 63), 0.26), rgba(var(--hue-rgb, 214, 40, 63), 0.14));
+  box-shadow: 0 0 12px rgba(var(--azy-glow-rgb-user, var(--hue-rgb, 214, 40, 63)), calc(0.22 * var(--azy-glow-k, 1)));
+}
+
+/* Files hero: the section title lives in the rail now; Pin folder becomes the round + */
+.minimal-ui #app .files-hero .section-hero-copy { display: none; }
+.minimal-ui #app .files-hero .hero-action {
+  width: 30px; height: 30px; padding: 0; border-radius: 50%;
+  justify-content: center; gap: 0;
+  border: 1px solid rgba(var(--hue-rgb, 214, 40, 63), 0.5); background: rgba(var(--hue-rgb, 214, 40, 63), 0.14);
+  box-shadow: 0 0 14px rgba(var(--azy-glow-rgb-user, var(--hue-rgb, 214, 40, 63)), calc(0.3 * var(--azy-glow-k, 1)));
+}
+.minimal-ui #app .files-hero .hero-action span { display: none; }
+
+/* toolbar + search row: glass chips, gradient actives */
+.minimal-ui #app .icon-btn { border-radius: 9px; border-color: transparent; background: transparent; color: var(--dim); }
+.minimal-ui #app .icon-btn:hover:not(:disabled) { background: rgba(var(--hue-rgb, 214, 40, 63), 0.1); color: var(--text); }
+.minimal-ui #app .icon-btn[aria-pressed="true"], .minimal-ui #app .icon-btn.active {
+  color: var(--text); border-color: rgba(var(--hue-rgb, 214, 40, 63), 0.5);
+  background: linear-gradient(135deg, rgba(var(--hue-rgb, 214, 40, 63), 0.3), rgba(var(--hue-rgb, 214, 40, 63), 0.18));
+  box-shadow: 0 0 12px rgba(var(--azy-glow-rgb-user, var(--hue-rgb, 214, 40, 63)), calc(0.25 * var(--azy-glow-k, 1)));
+}
+.minimal-ui #app .files-section-toggle { border-radius: 10px; border: 1px solid var(--line-hi); background: color-mix(in srgb, color-mix(in srgb, rgb(var(--hue-rgb, 214, 40, 63)) 8%, var(--azy-depth-0, #050505)) 55%, transparent); padding: 2px; gap: 2px; }
+.minimal-ui #app .pin-btn { border-radius: 999px; padding: 0 12px; border-color: rgba(var(--hue-rgb, 214, 40, 63), 0.45); background: rgba(var(--hue-rgb, 214, 40, 63), 0.12); color: var(--text); }
+.minimal-ui #app :is(.search-input, .file-sort-control select) { border-radius: 12px; background: rgba(9, 9, 9, 0.55); border-color: var(--line-hi); }
+.minimal-ui #app .search-input:focus { border-color: rgba(var(--hue-rgb, 214, 40, 63), 0.65); box-shadow: 0 0 0 3px rgba(var(--hue-rgb, 214, 40, 63), 0.12), 0 0 18px rgba(var(--azy-glow-rgb-user, var(--hue-rgb, 214, 40, 63)), calc(0.18 * var(--azy-glow-k, 1))); }
+
+/* media cards: rounded-2xl glass, centred play ring, uppercase meta */
+.minimal-ui #app :is(#fileGrid, #presetGrid, #flowGrid) .file-card {
+  padding: 8px; border-radius: 16px; gap: 8px;
+  border: 1px solid var(--line-hi); background: color-mix(in srgb, color-mix(in srgb, rgb(var(--hue-rgb, 214, 40, 63)) 8%, var(--azy-depth-0, #050505)) 55%, transparent);
+  transition: border-color calc(0.16s * var(--azy-speed-k, 1)) var(--ease), background-color calc(0.16s * var(--azy-speed-k, 1)) var(--ease), box-shadow calc(0.16s * var(--azy-speed-k, 1)) var(--ease);
+}
+.minimal-ui #app :is(#fileGrid, #presetGrid, #flowGrid) .file-card:hover {
+  border-color: rgba(var(--hue-rgb, 214, 40, 63), 0.4); background: rgba(var(--hue-rgb, 214, 40, 63), 0.06);
+  box-shadow: 0 6px 22px rgba(0, 0, 0, 0.35), 0 0 16px rgba(var(--azy-glow-rgb-user, var(--hue-rgb, 214, 40, 63)), calc(0.14 * var(--azy-glow-k, 1)));
+}
+.minimal-ui #app #fileGrid .file-card.selected {
+  border-color: rgba(var(--hue-rgb, 214, 40, 63), 0.65); background: rgba(var(--hue-rgb, 214, 40, 63), 0.1);
+  box-shadow: 0 0 0 1px rgba(var(--hue-rgb, 214, 40, 63), 0.35), 0 0 22px rgba(var(--azy-glow-rgb-user, var(--hue-rgb, 214, 40, 63)), calc(0.25 * var(--azy-glow-k, 1)));
+}
+.minimal-ui #app #fileGrid .file-card .thumb { border-radius: 12px; }
+.minimal-ui #app #fileGrid :is(.file-card--video, .file-card--audio) .play-badge {
+  /* Centred with inset + auto margins, NOT translate(): hover scales via the independent `scale`
+     property, so the icon can never lose its centring and jump (v1.18 play-hover fix). */
+  inset: 0; margin: auto; transform: none;
+  width: 38px; height: 38px; border-radius: 50%;
+  background: rgba(10, 10, 10, 0.78); border: 1px solid rgba(200, 200, 200, 0.5);
+  color: var(--text);
+}
+.minimal-ui #app .media-card-meta { font-size: 9px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--faint); }
+.minimal-ui #app .file-name { font-size: 12.5px; font-weight: 650; }
+
+/* Flow + Presets cards: gradient rim, star and kebab on glass */
+.minimal-ui #app :is(#flowGrid, #presetGrid) .file-card { border-color: rgba(var(--hue-rgb, 214, 40, 63), 0.32); }
+.minimal-ui #app :is(#flowGrid, #presetGrid) .file-card:hover { border-color: rgba(var(--hue-rgb, 214, 40, 63), 0.55); box-shadow: 0 0 20px rgba(var(--azy-glow-rgb-user, var(--hue-rgb, 214, 40, 63)), calc(0.22 * var(--azy-glow-k, 1))); }
+.minimal-ui #app :is(#flowGrid, #presetGrid) .thumb { border-radius: 12px; border-color: rgba(var(--hue-rgb, 214, 40, 63), 0.25); }
+.minimal-ui #app .fav-badge { border-radius: 50%; background: rgba(11, 11, 11, 0.72); border: 1px solid rgba(var(--hue-rgb, 214, 40, 63), 0.4); backdrop-filter: blur(4px); }
+
+/* Flow toolbar: Create curve as a glowing gradient chip */
+.minimal-ui #app .flow-toolbar .pin-btn {
+  border-radius: 12px; padding: 0 14px; min-height: 32px;
+  border-color: rgba(var(--hue-rgb, 214, 40, 63), 0.55);
+  background: linear-gradient(135deg, rgba(var(--hue-rgb, 214, 40, 63), 0.3), rgba(var(--hue-rgb, 214, 40, 63), 0.16));
+  box-shadow: 0 0 16px rgba(var(--azy-glow-rgb-user, var(--hue-rgb, 214, 40, 63)), calc(0.28 * var(--azy-glow-k, 1)));
+  color: var(--text); font-weight: 650;
+}
+.minimal-ui #app .azy-scope { border-radius: 12px; border: 1px solid var(--line-hi); background: color-mix(in srgb, color-mix(in srgb, rgb(var(--hue-rgb, 214, 40, 63)) 8%, var(--azy-depth-0, #050505)) 55%, transparent); padding: 3px; gap: 3px; }
+.minimal-ui #app .azy-scope-btn { border-radius: 9px; padding: 6px 12px; font-size: 11px; font-weight: 600; color: var(--dim); }
+.minimal-ui #app .azy-scope-btn.active {
+  color: var(--text);
+  background: linear-gradient(135deg, rgba(var(--hue-rgb, 214, 40, 63), 0.4), rgba(var(--hue-rgb, 214, 40, 63), 0.26));
+  box-shadow: 0 0 12px rgba(var(--azy-glow-rgb-user, var(--hue-rgb, 214, 40, 63)), calc(0.3 * var(--azy-glow-k, 1)));
+}
+
+/* Sounds cards join the same glass family */
+.minimal-ui #app .sound-card { border-radius: 16px; border-color: var(--line-hi); background: color-mix(in srgb, color-mix(in srgb, rgb(var(--hue-rgb, 214, 40, 63)) 8%, var(--azy-depth-0, #050505)) 55%, transparent); }
+.minimal-ui #app .sound-card:hover { border-color: rgba(var(--hue-rgb, 214, 40, 63), 0.45); box-shadow: 0 0 16px rgba(var(--azy-glow-rgb-user, var(--hue-rgb, 214, 40, 63)), calc(0.16 * var(--azy-glow-k, 1))); }
+
+/* ---------- design system: glass tokens (configurable in one place) ---------- */
+:root {
+  --glass-bg: rgba(10, 10, 10, 0.5);
+  --glass-bg-hi: rgba(14, 14, 14, 0.72);
+  --glass-blur: blur(14px) saturate(1.2);
+  --glass-line: rgba(var(--hue-rgb, 214, 40, 63), 0.22);
+  --glass-line-hi: rgba(var(--hue-rgb, 214, 40, 63), 0.52);
+  --glow-ambient: 0 0 18px rgba(var(--azy-glow-rgb-user, var(--hue-rgb, 214, 40, 63)), calc(0.1 * var(--azy-glow-k, 1)));
+  --glow-hover: 0 0 16px rgba(var(--azy-glow-rgb-user, var(--hue-rgb, 214, 40, 63)), calc(0.2 * var(--azy-glow-k, 1)));
+  --glow-active: 0 0 20px rgba(var(--azy-glow-rgb-user, var(--hue-rgb, 214, 40, 63)), calc(0.3 * var(--azy-glow-k, 1)));
+  --glass-r-lg: 16px;
+  --glass-r-md: 12px;
+  --glass-r-sm: 9px;
+  --glass-ease: cubic-bezier(0.3, 0.7, 0.3, 1);
+}
+
+/* ---------- optional spider motif: original web geometry, accent-adaptive ---------- */
+.spider-mode #app::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.85;
+  background:
+    repeating-radial-gradient(circle at 10% 6%, transparent 0 46px, rgba(var(--hue-rgb, 214, 40, 63), 0.045) 46px 47px),
+    repeating-radial-gradient(circle at 92% 94%, transparent 0 54px, rgba(var(--hue-rgb, 214, 40, 63), 0.035) 54px 55px),
+    repeating-conic-gradient(from 6deg at 10% 6%, transparent 0 13deg, rgba(var(--hue-rgb, 214, 40, 63), 0.028) 13deg 13.7deg),
+    repeating-conic-gradient(from 186deg at 92% 94%, transparent 0 13deg, rgba(var(--hue-rgb, 214, 40, 63), 0.022) 13deg 13.7deg);
+}
+.spider-mode .azy-wait-card::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  border-radius: inherit;
+  background: repeating-radial-gradient(circle at 88% 10%, transparent 0 26px, rgba(var(--hue-rgb, 214, 40, 63), 0.05) 26px 27px);
+}
+.spider-mode .empty-orb { box-shadow: 0 0 0 1px rgba(var(--hue-rgb, 214, 40, 63), 0.25), 0 0 24px -6px rgba(var(--azy-glow-rgb-user, var(--hue-rgb, 214, 40, 63)), calc(0.35 * var(--azy-glow-k, 1))); }
+
+/* ---------- Settings: same glass system, grouped cards ---------- */
+.minimal-ui #app .settings-cat { border: 1px solid var(--glass-line); background: var(--glass-bg); border-radius: var(--glass-r-md); padding: 8px 10px; gap: 9px; transition: border-color calc(140ms * var(--azy-speed-k, 1)) var(--glass-ease), background-color calc(140ms * var(--azy-speed-k, 1)) var(--glass-ease), box-shadow calc(140ms * var(--azy-speed-k, 1)) var(--glass-ease); }
+.minimal-ui #app .settings-cat:hover { border-color: rgba(var(--hue-rgb, 214, 40, 63), 0.38); box-shadow: var(--glow-ambient); }
+.minimal-ui #app .settings-cat.active { border-color: var(--glass-line-hi); background: linear-gradient(135deg, rgba(var(--hue-rgb, 214, 40, 63), 0.28), rgba(var(--hue-rgb, 214, 40, 63), 0.16)); box-shadow: var(--glow-active); color: var(--text); }
+.minimal-ui #app .settings-cat b { font-size: 12px; font-weight: 650; }
+.minimal-ui #app .settings-cat em { font-size: 9.5px; color: var(--faint); font-style: normal; }
+.minimal-ui #app .settings-cat .settings-cat-icon { width: 22px; height: 22px; border-radius: 7px; display: grid; place-items: center; background: rgba(var(--hue-rgb, 214, 40, 63), 0.14); border: 1px solid rgba(var(--hue-rgb, 214, 40, 63), 0.3); color: var(--hue-soft, var(--hue)); }
+.minimal-ui #app .snap-setting { padding: 10px 12px; border: 1px solid var(--glass-line); border-radius: var(--glass-r-md); background: var(--glass-bg-hi); gap: 12px; transition: border-color calc(140ms * var(--azy-speed-k, 1)) var(--glass-ease); }
+.minimal-ui #app .snap-setting:hover { border-color: rgba(var(--hue-rgb, 214, 40, 63), 0.38); }
+.minimal-ui #app .snap-setting + .snap-setting { margin-top: 8px; }
+.minimal-ui #app .snap-setting-title { font-size: 12.5px; font-weight: 650; color: var(--text); }
+.minimal-ui #app .snap-setting-desc { font-size: 10.5px; color: var(--dim); line-height: 1.45; }
+.minimal-ui #app .settings-h { font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--faint); margin: 14px 2px 6px; }
+.minimal-ui #app .chip { border-radius: 999px; border-color: var(--glass-line); background: var(--glass-bg); font-size: 11px; font-weight: 600; transition: border-color calc(140ms * var(--azy-speed-k, 1)) var(--glass-ease), background-color calc(140ms * var(--azy-speed-k, 1)) var(--glass-ease), box-shadow calc(140ms * var(--azy-speed-k, 1)) var(--glass-ease); }
+.minimal-ui #app .chip:hover { border-color: var(--glass-line-hi); box-shadow: var(--glow-hover); }
+.minimal-ui #app .chip--pin.active { border-color: var(--glass-line-hi); background: linear-gradient(135deg, rgba(var(--hue-rgb, 214, 40, 63), 0.32), rgba(var(--hue-rgb, 214, 40, 63), 0.2)); box-shadow: var(--glow-active); }
+.minimal-ui #app .snap-switch { transition: background-color calc(160ms * var(--azy-speed-k, 1)) var(--glass-ease), box-shadow calc(160ms * var(--azy-speed-k, 1)) var(--glass-ease); }
+.minimal-ui #app .snap-switch:checked { box-shadow: var(--glow-active); }
+.minimal-ui #app select, .minimal-ui #app .flow-select { background: rgba(9, 9, 9, 0.6); border: 1px solid var(--glass-line); border-radius: var(--glass-r-sm); color: var(--text); font: inherit; font-size: 11px; padding: 5px 8px; outline: none; }
+.minimal-ui #app select:hover, .minimal-ui #app .flow-select:hover { border-color: var(--glass-line-hi); }

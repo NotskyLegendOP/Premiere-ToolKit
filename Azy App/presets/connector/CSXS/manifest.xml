@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!--
+  Azy — Premiere Pro extension (CEP).
+  Starts with Premiere (StartOn ApplicationActivate), links to the running Azy app on loopback,
+  and hosts Azy's own UI inside the panel. One extension = the whole Azy runtime in Premiere.
+-->
+<ExtensionManifest xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" ExtensionBundleId="com.azy.premiere.connector" ExtensionBundleVersion="1.7.0" ExtensionBundleName="Azy" Version="11.0">
+  <ExtensionList>
+    <Extension Id="com.azy.premiere.connector.panel" Version="1.7.0"/>
+  </ExtensionList>
+  <ExecutionEnvironment>
+    <HostList>
+      <!-- Premiere Pro 2023 (23.0) through 2026 and later. -->
+      <Host Name="PPRO" Version="[23.0,99.9]"/>
+    </HostList>
+    <LocaleList>
+      <Locale Code="All"/>
+    </LocaleList>
+    <RequiredRuntimeList>
+      <RequiredRuntime Name="CSXS" Version="11.0"/>
+    </RequiredRuntimeList>
+  </ExecutionEnvironment>
+  <DispatchInfoList>
+    <Extension Id="com.azy.premiere.connector.panel">
+      <DispatchInfo>
+        <Resources>
+          <MainPath>./index.html</MainPath>
+          <ScriptPath>./host/azy.jsx</ScriptPath>
+          <CEFCommandLine>
+            <Parameter>--allow-file-access-from-files</Parameter>
+            <Parameter>--allow-running-insecure-content</Parameter>
+            <!-- Node inside the panel: the reverse link (Azy dials INTO Premiere) uses Node's net module,
+                 which bypasses the CEF network stack that AV web-shields / proxies can block. -->
+            <Parameter>--enable-nodejs</Parameter>
+            <Parameter>--mixed-context</Parameter>
+          </CEFCommandLine>
+        </Resources>
+        <Lifecycle>
+          <!-- Start as soon as Premiere is up; the panel is visible in the last workspace state. -->
+          <AutoVisible>true</AutoVisible>
+          <StartOn>
+            <Event>com.adobe.csxs.events.ApplicationActivate</Event>
+            <Event>applicationActivate</Event>
+          </StartOn>
+        </Lifecycle>
+        <UI>
+          <Type>Panel</Type>
+          <Menu>Azy</Menu>
+          <Geometry>
+            <Size>
+              <Height>560</Height>
+              <Width>360</Width>
+            </Size>
+            <MinSize>
+              <Height>200</Height>
+              <Width>260</Width>
+            </MinSize>
+            <MaxSize>
+              <Height>4000</Height>
+              <Width>4000</Width>
+            </MaxSize>
+          </Geometry>
+          <Icons>
+            <Icon Type="Normal">./icons/dark.png</Icon>
+            <Icon Type="RollOver">./icons/light.png</Icon>
+            <Icon Type="DarkNormal">./icons/dark.png</Icon>
+            <Icon Type="DarkRollOver">./icons/light.png</Icon>
+          </Icons>
+        </UI>
+      </DispatchInfo>
+    </Extension>
+  </DispatchInfoList>
+</ExtensionManifest>

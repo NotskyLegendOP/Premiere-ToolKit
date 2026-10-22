@@ -1,0 +1,209 @@
+/* ---------- Dagger — Premiere Toolkit look (v1.24) ----------
+The four wheels (Azy, SFX, Presets, Flow) share this glass-disc design, copied from the
+   Toolkit wheel: ticks, thin white rim, dark glass slices with a sheen, an accent highlight arc, number badges and a round hub that names the wheel / the hovered item.
+   Colours come from the theme (--hue-rgb), so every Azy theme still applies.
+   No CSS filters anywhere (the wheel stays on the compositor). Structure of the window, hit-testing and IPC are unchanged — this file is presentation only. */
+
+/* a little pop on open, like the Toolkit wheel (the pick never waits for it) */
+:root[data-theme][data-skin] .dagger { transform: scale(0.8) rotate(-10deg); transition: opacity 140ms var(--azy-ease-out, ease-out), transform 260ms cubic-bezier(.2, .9, .25, 1.12); }
+:root[data-theme][data-skin] .dagger.open { transform: none; }
+:root[data-theme][data-skin] .dagger.closing { transform: scale(0.9); transition: opacity 110ms ease-in, transform 120ms ease-in; }
+:root[data-theme][data-skin] .dagger.commit { transform: scale(1.02); }
+
+/* old decoration that the Toolkit wheel doesn't have */
+:root[data-theme][data-skin] .dagger .dg-halo, :root[data-theme][data-skin] .dagger .dg-ticks, :root[data-theme][data-skin] .dagger .dg-sheen, :root[data-theme][data-skin] .dagger .dg-hubring, :root[data-theme][data-skin] .dagger .dg-orbit, :root[data-theme][data-skin] .dagger .dg-hubcore, :root[data-theme][data-skin] .dagger .dagger-sigil, :root[data-theme][data-skin] .dagger .dg-hubname, :root[data-theme][data-skin] .dagger .dagger-wheel-name, :root[data-theme][data-skin] .dagger .dagger-web, :root[data-theme][data-skin] .dagger .dagger-mark, :root[data-theme][data-skin] .dagger .dagger-hub, :root[data-theme][data-skin] .dagger .dagger-hub-ring { display: none !important; }
+
+/* ticks */
+:root[data-theme][data-skin] .dagger .tk-ticks { transform-origin: 0 0; opacity: 0; transition: opacity 200ms ease; }
+:root[data-theme][data-skin] .dagger.open .tk-ticks { opacity: 1; animation: tkSpin 90s linear infinite reverse; }
+:root[data-theme][data-skin] .dagger .tk-ticks path { fill: none; stroke: rgba(255, 255, 255, 0.22); stroke-width: 1; }
+
+/* glass body */
+:root[data-theme][data-skin] .dagger .tk-disc { fill: color-mix(in srgb, var(--azy-depth-0, #0a0c11) 26%, transparent); }
+:root[data-theme][data-skin] .dagger .tk-disc2 { fill: url(#tkDisc); }
+:root[data-theme][data-skin] .dagger .sector {
+  fill: color-mix(in srgb, var(--azy-depth-1, #14161c) 38%, transparent);
+  stroke: rgba(255, 255, 255, 0.17); stroke-width: 1;
+  transition: fill 120ms ease, translate 160ms cubic-bezier(.3, 1.4, .5, 1), opacity 160ms ease;
+}
+:root[data-theme][data-skin] .dagger .sector.hot { fill: color-mix(in srgb, rgb(var(--hue-rgb)) 52%, transparent); stroke: rgba(255, 255, 255, 0.55); }
+:root[data-theme][data-skin] .dagger .sector.picked { fill: color-mix(in srgb, rgb(var(--hue-rgb)) 66%, transparent); stroke: rgba(255, 255, 255, 0.7); }
+:root[data-theme][data-skin] .dagger .tk-sheens .sheen { fill: url(#tkSheen); opacity: 0.6; pointer-events: none; transition: translate 160ms cubic-bezier(.3, 1.4, .5, 1); }
+:root[data-theme][data-skin] .dagger .tk-ring { fill: none; stroke: url(#tkRim); stroke-width: 1.8; stroke-dasharray: 1160; stroke-dashoffset: 1160; }
+:root[data-theme][data-skin] .dagger.open .tk-ring { stroke-dashoffset: 0; transition: stroke-dashoffset 600ms 40ms cubic-bezier(.3, .7, .2, 1); }
+:root[data-theme][data-skin] .dagger .dagger-rim.tk-ring { stroke: url(#tkRim); stroke-width: 1.8; opacity: 1; }
+:root[data-theme][data-skin] .dagger .tk-dash { fill: none; stroke: rgba(var(--hue-rgb), 0.5); stroke-width: 1; stroke-dasharray: 3 9; transform-origin: 0 0; opacity: 0; }
+:root[data-theme][data-skin] .dagger.open .tk-dash { opacity: 1; animation: tkSpin 40s linear infinite; }
+:root[data-theme][data-skin] .dagger .tk-hl { fill: none; stroke: rgb(var(--hue-rgb)); stroke-width: 3.5; stroke-linecap: round; transform-origin: 0 0; transform-box: view-box; opacity: 0; transition: opacity 150ms ease; }
+
+/* the hover wedge from the old renderer is replaced by the slice fill + arc above */
+:root[data-theme][data-skin] .dagger .dg-wedge { display: none; }
+
+/* needle: a small triangle on the hub edge, pointing where the cursor is */
+:root[data-theme][data-skin] .dagger .dagger-needle { left: 229px; top: 148px; width: 2px; height: 82px; transform-origin: 1px 82px; transition: opacity 140ms ease; will-change: transform; }
+:root[data-theme][data-skin] .dagger .dagger-needle i { left: -6px; top: 0; width: 14px; height: 12px; border-radius: 0; background: #fff; clip-path: polygon(50% 0, 0 100%, 100% 100%); }
+
+/* labels */
+:root[data-theme][data-skin] .dagger .dagger-label { font-size: 12px; font-weight: 600; color: #f2f4f8; text-shadow: 0 1px 3px rgba(0, 0, 0, 0.75); width: 110px; margin: -30px 0 0 -55px; transform: translateY(10px); }
+:root[data-theme][data-skin] .dagger.open .dagger-label { transform: none; }
+:root[data-theme][data-skin] .dagger .dagger-label .ic, :root[data-theme][data-skin] .dagger .dagger-label .ic {
+  width: 30px; height: 30px; margin: 0 auto 4px; border: 0; background: transparent; box-shadow: none; color: #fff;
+}
+:root[data-theme][data-skin] .dagger .dagger-label .ic::after { display: none; }
+:root[data-theme][data-skin] .dagger .dagger-label .ic svg, :root[data-theme][data-skin] .dagger .dagger-label .ic svg { width: 28px; height: 28px; }
+:root[data-theme][data-skin] .dagger .dagger-label .kbd { display: none; }
+:root[data-theme][data-skin] .dagger .dagger-label.hot { color: #fff; }
+:root[data-theme][data-skin] .dagger .dagger-label.hot .ic { border: 0; color: #fff; transform: none; animation: none; }
+:root[data-theme][data-skin] .dagger .dagger-label.hot { transform: scale(1.14); }
+:root[data-theme][data-skin] .dagger .dagger-label--tight { width: 92px; margin-left: -46px; font-size: 11px; }
+:root[data-theme][data-skin] .dagger .dagger-label--tight .ic, :root[data-theme][data-skin] .dagger .dagger-label--tight .ic { width: 24px; height: 24px; margin-bottom: 3px; }
+:root[data-theme][data-skin] .dagger .dagger-label--tight .ic svg, :root[data-theme][data-skin] .dagger .dagger-label--tight .ic svg { width: 22px; height: 22px; }
+:root[data-theme][data-skin] .dagger .dagger-label--flow .ic, :root[data-theme][data-skin] .dagger .dagger-label--flow .ic { width: 44px; height: 28px; border-radius: 0; }
+:root[data-theme][data-skin] .dagger .dagger-label--flow .ic svg, :root[data-theme][data-skin] .dagger .dagger-label--flow .ic svg { width: 40px; height: 26px; }
+
+/* number badges near the rim */
+:root[data-theme][data-skin] .dagger .dagger-nb { position: absolute; transform: translate(-50%, -50%); font-size: 9.5px; font-weight: 600; color: rgba(255, 255, 255, 0.42); text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6); opacity: 0; transition: opacity 240ms 300ms ease; }
+:root[data-theme][data-skin] .dagger.open .dagger-nb { opacity: 1; }
+
+/* hub */
+:root[data-theme][data-skin] .dagger .tk-hub {
+  left: 50%; top: 50%; width: 118px; height: 118px; margin: -59px 0 0 -59px; border-radius: 50%;
+  display: grid; place-content: center; text-align: center; padding: 6px; box-sizing: border-box;
+  background: radial-gradient(circle at 30% 24%, rgba(255, 255, 255, 0.32), rgba(255, 255, 255, 0.04) 62%), color-mix(in srgb, var(--azy-depth-0, #12141a) 48%, transparent);
+  border: 1.5px solid rgba(255, 255, 255, 0.36);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.45), inset 0 -8px 16px rgba(0, 0, 0, 0.25), 0 6px 18px rgba(0, 0, 0, 0.4);
+  opacity: 0; transition: opacity 160ms ease;
+}
+:root[data-theme][data-skin] .dagger.open .tk-hub { opacity: 1; }
+:root[data-theme][data-skin] .dagger .tk-hub::before { content: ""; position: absolute; inset: -8px; border-radius: 50%; border: 1px dashed rgba(var(--hue-rgb), 0.6); }
+:root[data-theme][data-skin] .dagger.open .tk-hub::before { animation: tkSpin 14s linear infinite; }
+:root[data-theme][data-skin] .dagger .tk-hub::after { content: ""; position: absolute; inset: -2px; border-radius: 50%; border: 2px solid rgb(var(--hue-rgb)); opacity: 0; }
+:root[data-theme][data-skin] .dagger.open .tk-hub::after { animation: tkBreathe 2.6s ease-in-out infinite; }
+:root[data-theme][data-skin] .dagger .tk-hub b { font-size: 13px; color: #fff; text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6); max-width: 100px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+:root[data-theme][data-skin] .dagger .tk-hub small { font-size: 10px; color: rgba(255, 255, 255, 0.62); margin-top: 2px; line-height: 1.2; }
+
+@keyframes tkSpin { to { transform: rotate(360deg); } }
+@keyframes tkBreathe { 0%, 100% { opacity: 0; transform: scale(1); } 50% { opacity: 0.4; transform: scale(1.12); } }
+
+/* quality modes: loops off in Performance, none with reduced motion */
+html[data-perf="performance"] .dagger :is(.tk-ticks, .tk-dash, .tk-hub, .tk-hub::before, .tk-hub::after) { animation: none !important; }
+html[data-perf="balanced"] .dagger :is(.tk-ticks, .tk-hub::after) { animation: none !important; }
+html[data-motion="reduced"] .dagger, html[data-motion="reduced"] .dagger *, html[data-motion="reduced"] .dagger *::before, html[data-motion="reduced"] .dagger *::after { animation: none !important; }
+html[data-motion="reduced"] .dagger { transform: none !important; }
+
+/* ---------- Azy wheel only (data-wheel="main"): the look of the Toolkit reference (Image-1) ----------
+   The Toolkit wheel takes every accent from --wac, and in the reference that accent is white: that is why
+   the lit slice is a light grey with a bright white arc, a white needle and a white hub ring. SFX, Presets
+   and Flow are NOT touched — they keep the themed accent above. To theme the Azy wheel again, change
+   --tk-ac (r, g, b) or delete this block. data-wheel is set by dagger-renderer.js on every build(). */
+:root[data-wheel="main"][data-theme][data-skin] .dagger { --tk-ac: 255, 255, 255; }
+:root[data-wheel="main"][data-theme][data-skin] .dagger .sector.hot { fill: rgba(var(--tk-ac), 0.68); stroke: rgba(255, 255, 255, 0.55); }
+:root[data-wheel="main"][data-theme][data-skin] .dagger .sector.picked { fill: rgba(var(--tk-ac), 0.8); stroke: rgba(255, 255, 255, 0.7); }
+:root[data-wheel="main"][data-theme][data-skin] .dagger .tk-hl { stroke: rgb(var(--tk-ac)); }
+:root[data-wheel="main"][data-theme][data-skin] .dagger .tk-dash { stroke: rgba(var(--tk-ac), 0.5); }
+:root[data-wheel="main"][data-theme][data-skin] .dagger .tk-hub::before { border-color: rgba(var(--tk-ac), 0.6); }
+:root[data-wheel="main"][data-theme][data-skin] .dagger .tk-hub::after { border-color: rgb(var(--tk-ac)); }
+
+/* needle: points at the centre of the lit slice. Its angle is a spring run by the rAF loop in
+   dagger-renderer.js (shortest way round, a touch of overshoot); only its opacity is a CSS transition,
+   and the renderer hides it whenever no slice is lit. */
+:root[data-wheel="main"][data-theme][data-skin] .dagger .dagger-needle { transition: opacity 140ms ease; will-change: transform; }
+
+/* ---------- the pointer: a white dot replaces the OS cursor (hidden on every wheel) ----------
+   dagger-renderer.js moves #dot by transform only, from its requestAnimationFrame loop (eased, with a
+   small comet stretch along the direction of travel), and #trail is a softer ring that follows it.
+   The dot is drawn with two pseudo-elements so the loop's translate never fights a CSS animation:
+   ::before is the core (pearl-white, a dark keyline + soft white halo so it still reads on the pale
+   lit slice), ::after is a ring that breathes outward while the pointer is idle between slices.
+   Change --tk-dot to recolour the core. */
+:root[data-theme][data-skin] .dagger .dagger-dot {
+  --tk-dot: 255, 255, 255;
+  display: block !important; position: absolute; left: 50%; top: 50%; width: 12px; height: 12px; margin: -6px 0 0 -6px;
+  border-radius: 50%; background: none; box-shadow: none; pointer-events: none; z-index: 30; opacity: 0; transition: opacity 140ms ease;
+  will-change: transform;
+}
+:root[data-theme][data-skin] .dagger .dagger-dot::before {
+  content: ""; position: absolute; inset: 0; border-radius: 50%;
+  background: radial-gradient(circle at 36% 30%, #fff 0, rgb(var(--tk-dot)) 52%, #dfe5f0 100%);
+  box-shadow: 0 0 0 1.5px rgba(8, 10, 16, 0.55), 0 0 0 3px rgba(255, 255, 255, 0.38), 0 0 12px 3px rgba(255, 255, 255, 0.32), 0 2px 7px rgba(0, 0, 0, 0.55);
+  transition: transform 180ms cubic-bezier(.3, 1.5, .5, 1);
+}
+:root[data-theme][data-skin] .dagger .dagger-dot::after {
+  content: ""; position: absolute; inset: -4px; border-radius: 50%; border: 1.5px solid rgba(255, 255, 255, 0.7); opacity: 0;
+}
+:root[data-theme][data-skin] .dagger.open .dagger-dot { opacity: 1; }
+:root[data-theme][data-skin] .dagger.open:not(.has-hover) .dagger-dot::after { animation: tkDotRing 2.4s 200ms ease-out infinite; }
+:root[data-theme][data-skin] .dagger.has-hover .dagger-dot::before { transform: scale(1.18); }
+:root[data-theme][data-skin] .dagger.commit .dagger-dot::before { animation: tkDotPick 280ms cubic-bezier(.2, .8, .2, 1) forwards; }
+:root[data-theme][data-skin] .dagger.closing .dagger-dot { opacity: 0; }
+@keyframes tkDotRing { 0% { opacity: 0; transform: scale(0.8); } 18% { opacity: 0.75; } 100% { opacity: 0; transform: scale(2.3); } }
+@keyframes tkDotPick { 0% { transform: scale(1.18); } 35% { transform: scale(0.62); } 100% { transform: scale(1.7); opacity: 0; } }
+
+/* the trailing ring: same transform-only layer, a softer follower (the loop eases it ~90 ms behind the dot) */
+:root[data-theme][data-skin] .dagger .dg-trail {
+  left: 50%; top: 50%; width: 26px; height: 26px; margin: -13px 0 0 -13px; background: none; border-radius: 50%;
+  border: 1.5px solid rgba(255, 255, 255, 0.5); box-shadow: 0 0 10px rgba(255, 255, 255, 0.12);
+  opacity: 0; transition: opacity 180ms ease; will-change: transform;
+}
+:root[data-theme][data-skin] .dagger.open.has-pointer .dg-trail { opacity: 0.55; }
+:root[data-theme][data-skin] .dagger.has-hover .dg-trail { opacity: 0.8; }
+:root[data-theme][data-skin] .dagger.closing .dg-trail { opacity: 0; }
+
+/* ---------- motion (v1.24): compositor-only; every continuous movement is the rAF loop in dagger-renderer.js ----------
+   1. Opening: the slices bloom clockwise (a short scale+fade), then their labels rise in behind them, then
+      the hub pops. These are one-shot ANIMATIONS — the old per-child transition-delay staggering is switched
+      off below because it also delayed the HOVER fill of later slices by up to 90 ms (a hover lag that
+      was different on every slice).
+   2. Hover: the lit slice pops outward (spring), the highlight arc glides slice to slice, the needle springs
+      round by the short way, the hub name slides in and the hub gives a tiny pulse, the icon pops.
+   3. Pick: the lit slice and a ring flash outward, the dot collapses and bursts, the other slices dim. */
+:root[data-theme][data-skin] .dagger.open :is(.sector, .dagger-label) { transition-delay: 0s !important; }
+:root[data-theme][data-skin] .dagger .sector { transform-origin: 0 0; }
+:root[data-theme][data-skin] .dagger.open .sector { animation: tkSectorIn 340ms calc(var(--i, 0) * 30ms) cubic-bezier(.2, .9, .25, 1.05) backwards; }
+:root[data-theme][data-skin] .dagger.open .tk-sheens .sheen { animation: tkFadeIn 360ms 120ms ease backwards; }
+:root[data-theme][data-skin] .dagger.open .dagger-label { animation: tkLabelIn 320ms calc(var(--i, 0) * 30ms + 70ms) cubic-bezier(.2, .9, .3, 1.15) backwards; }
+:root[data-theme][data-skin] .dagger.open .tk-hub { animation: tkHubIn 420ms 40ms cubic-bezier(.2, 1.2, .3, 1) backwards; }
+:root[data-theme][data-skin] .dagger .sector { transition: fill 140ms ease, stroke 140ms ease, translate 180ms cubic-bezier(.3, 1.4, .5, 1), opacity 160ms ease; }
+:root[data-theme][data-skin] .dagger .dagger-label { transition: color 140ms ease, transform 200ms cubic-bezier(.3, 1.4, .5, 1), opacity 160ms ease; }
+:root[data-theme][data-skin] .dagger .dagger-label.hot .ic { animation: tkIconPop 300ms cubic-bezier(.2, 1.4, .4, 1); }
+:root[data-theme][data-skin] .dagger.commit .sector:not(.picked) { opacity: 0.4; transition: opacity 120ms ease; }
+:root[data-theme][data-skin] .dagger.commit .dagger-label:not(.hot) { opacity: 0.35; }
+/* the hover pulse and commit shockwave rings (fired from the renderer with WAAPI) */
+:root[data-theme][data-skin] .dagger .dg-pulse, :root[data-theme][data-skin] .dagger .dg-shock {
+  left: 50%; top: 50%; width: 132px; height: 132px; margin: -66px 0 0 -66px; border-radius: 50%; opacity: 0;
+  border: 1.5px solid rgba(var(--tk-ac, var(--hue-rgb)), 0.85);
+}
+:root[data-theme][data-skin] .dagger .dg-shock { border-width: 2px; border-color: rgba(255, 255, 255, 0.85); }
+@keyframes tkSectorIn { from { opacity: 0; scale: 0.86; } to { opacity: 1; scale: 1; } }
+@keyframes tkFadeIn { from { opacity: 0; } }
+@keyframes tkLabelIn { from { opacity: 0; translate: 0 12px; scale: 0.82; } to { opacity: 1; translate: 0 0; scale: 1; } }
+@keyframes tkHubIn { from { opacity: 0; scale: 0.6; } to { opacity: 1; scale: 1; } }
+@keyframes tkIconPop { 0% { transform: scale(0.82); } 55% { transform: scale(1.16); } 100% { transform: scale(1); } }
+html[data-perf="performance"] .dagger .dagger-dot::after { animation: none !important; }
+html[data-perf="performance"] .dagger :is(.sector, .dagger-label, .tk-hub, .sheen) { animation: none !important; }
+html[data-motion="reduced"] .dagger .dagger-dot::before, html[data-motion="reduced"] .dagger .dagger-dot::after { animation: none !important; transition: none !important; }
+
+/* Azy wheel: the lit slice is pale (Image-1), so the lit label gets a firmer shadow to stay readable */
+:root[data-wheel="main"][data-theme][data-skin] .dagger .dagger-label.hot { text-shadow: 0 1px 2px rgba(0, 0, 0, 0.7), 0 0 8px rgba(0, 0, 0, 0.45); }
+
+
+/* ---------- Iron Man (v1.24): the Dagger wheels in armour red + reactor gold ----------
+   Same geometry and hit-testing — colours only. The :is([data-wheel], :not([data-wheel])) keeps this
+   above the per-wheel rules whether or not the page carries data-wheel. */
+:root[data-theme-id="ironman"][data-theme][data-skin]:is([data-wheel], :not([data-wheel])) .dagger {
+  --im-gold-rgb: 242, 176, 30;
+}
+:root[data-theme-id="ironman"][data-theme][data-skin]:is([data-wheel], :not([data-wheel])) .dagger .sector { stroke: rgba(var(--im-gold-rgb), 0.28); }
+:root[data-theme-id="ironman"][data-theme][data-skin]:is([data-wheel], :not([data-wheel])) .dagger .sector.hot { fill: color-mix(in srgb, rgb(var(--hue-rgb)) 56%, transparent); stroke: rgba(var(--im-gold-rgb), 0.95); }
+:root[data-theme-id="ironman"][data-theme][data-skin]:is([data-wheel], :not([data-wheel])) .dagger .sector.picked { fill: color-mix(in srgb, rgb(var(--hue-rgb)) 72%, transparent); stroke: rgba(var(--im-gold-rgb), 1); }
+:root[data-theme-id="ironman"][data-theme][data-skin]:is([data-wheel], :not([data-wheel])) .dagger .tk-ring,
+:root[data-theme-id="ironman"][data-theme][data-skin]:is([data-wheel], :not([data-wheel])) .dagger .dagger-rim.tk-ring { stroke: rgba(var(--im-gold-rgb), 0.9); }
+:root[data-theme-id="ironman"][data-theme][data-skin]:is([data-wheel], :not([data-wheel])) .dagger .tk-ticks path { stroke: rgba(var(--im-gold-rgb), 0.38); }
+:root[data-theme-id="ironman"][data-theme][data-skin]:is([data-wheel], :not([data-wheel])) .dagger .tk-dash { stroke: rgba(var(--im-gold-rgb), 0.6); }
+:root[data-theme-id="ironman"][data-theme][data-skin]:is([data-wheel], :not([data-wheel])) .dagger .tk-hl { stroke: rgb(var(--im-gold-rgb)); }
+:root[data-theme-id="ironman"][data-theme][data-skin]:is([data-wheel], :not([data-wheel])) .dagger .tk-hub {
+  border-color: rgba(var(--im-gold-rgb), 0.7);
+  background: radial-gradient(circle at 50% 50%, rgba(var(--im-gold-rgb), 0.3), rgba(var(--hue-rgb), 0.12) 58%, transparent 74%), color-mix(in srgb, var(--azy-depth-0, #0a0506) 52%, transparent);
+}
+:root[data-theme-id="ironman"][data-theme][data-skin]:is([data-wheel], :not([data-wheel])) .dagger .tk-hub::before { border-color: rgba(var(--hue-rgb), 0.75); }
+:root[data-theme-id="ironman"][data-theme][data-skin]:is([data-wheel], :not([data-wheel])) .dagger .tk-hub::after { border-color: rgb(var(--im-gold-rgb)); }

@@ -1,0 +1,22 @@
+/* Only loaded when Azy's UI is hosted inside Premiere (CEP panel or UXP webview).
+   Same look as the app window — just no window chrome and no app-only controls. */
+body.in-premiere { background: var(--bg); }
+body.in-premiere .app { box-shadow: none; animation: none; height: 100vh; }
+body.in-premiere .drag-handle,
+body.in-premiere .grabber { display: none !important; }          /* Premiere owns the panel frame */
+body.in-premiere #filesTab { display: none !important; }          /* Files stays in the desktop app */
+body.in-premiere #addPresetFolderBtn { display: none !important; }/* needs an OS folder dialog */
+body.in-premiere #aotBtn,
+body.in-premiere .kbd-hint { display: none !important; }          /* no window to pin or close */
+body.in-premiere .status-hint { visibility: hidden; }
+body.in-premiere .statusbar { min-height: 0; padding-top: 0; padding-bottom: 0; height: 0; overflow: hidden; border: 0; }
+body.in-premiere [data-resize], body.in-premiere .resize-handle { display: none !important; }
+body.in-premiere * { -webkit-app-region: no-drag; }
+body.in-premiere.azy-offline .app::after {
+  content: "Azy app is not running — start Azy to use Presets, Flow and Snap here.";
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 99; padding: 6px 10px; font-size: 11px; text-align: center;
+  background: rgba(var(--hue-rgb, 214, 40, 63), .16); color: var(--azy-text-1, #ececef); border-top: 1px solid rgba(var(--hue-rgb, 214, 40, 63), .45); /* v1.19: theme accent, not legacy orange */
+}
+/* The compact desktop skin loads before this file. Keep the host-owned footer collapsed. */
+body.in-premiere #app .statusbar { display: none; }
+body.in-premiere #app .app-chrome { display: none; }

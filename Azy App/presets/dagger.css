@@ -1,0 +1,208 @@
+/* ---------- Dagger — the Azy wheel (v1.14 redesign) ----------
+   A transparent, click-through window. The disc (sectors, web, rim, hub) is ONE static SVG
+   painted once per layout. Everything that moves is a small HTML layer animated with
+   transform/opacity only — hover glow, needle, dot, rings, sparks — so the wheel stays on the
+   compositor. No CSS filters anywhere in the wheel.
+   Opens in 180 ms, closes in 120 ms; the pick never waits for an animation.
+   Performance mode: every ambient loop is off. Reduced motion: fades only.
+   Micro-animations are numbered (1–22) in the comments below. */
+html, body.dagger-body { margin: 0; height: 100%; background: transparent !important; overflow: hidden; }
+body.dagger-body { display: grid; place-items: center; cursor: none; user-select: none; }
+.dagger-body .aurora { display: none; }
+
+.dagger {
+  position: relative; width: 460px; height: 460px;
+  opacity: 0; transform: scale(calc(1 - 0.08 * var(--azy-motion-amp, 1)));
+  transition: opacity 150ms var(--azy-ease-out, ease-out), transform 180ms var(--azy-ease-out, ease-out);
+  color: var(--azy-accent);
+}
+.dagger.open { opacity: 1; transform: none; }
+/* 18 · close: a small twist + fade */
+.dagger.closing { opacity: 0; transform: rotate(calc(4deg * var(--azy-motion-amp, 1))) scale(calc(1 + 0.04 * var(--azy-motion-amp, 1))); transition: opacity 110ms var(--azy-ease, ease), transform 120ms var(--azy-ease, ease); }
+.dagger.commit { transform: scale(1.03); }
+.dagger > * { position: absolute; pointer-events: none; }
+.dagger-svg { inset: 0; overflow: visible; }
+.dagger > div > svg { width: 100%; height: 100%; overflow: visible; display: block; }
+
+/* ---- static disc ---------------------------------------------------------------- */
+.sector {
+  fill: color-mix(in srgb, var(--azy-depth-1) 90%, transparent);
+  stroke: var(--azy-border-hair); stroke-width: 1;
+  opacity: 0; transition: opacity 160ms var(--azy-ease);
+}
+.dagger.open .sector { opacity: 1; }
+.sector.picked { fill: color-mix(in srgb, rgb(var(--hue-rgb)) 22%, var(--azy-depth-1)); stroke: rgba(var(--hue-rgb), 0.75); }
+.dagger-web { opacity: 0; transition: opacity 180ms var(--azy-ease); }
+.dagger.open .dagger-web { opacity: 1; }
+.dagger-web path { fill: none; stroke: rgb(var(--azy-web-rgb, var(--hue-rgb))); stroke-linecap: round; vector-effect: non-scaling-stroke; }
+.dagger-web-thread { stroke-width: 1; opacity: calc(0.22 * var(--azy-deco-k, 1) + 0.08); }
+.dagger-web-ring { stroke-width: 0.8; opacity: calc(0.1 * var(--azy-deco-k, 1) + 0.04); }
+.dagger-rim { fill: none; stroke: rgba(var(--hue-rgb), 0.3); stroke-width: 1; }
+.dagger-hub { fill: color-mix(in srgb, var(--azy-depth-0) 94%, transparent); stroke: rgba(var(--hue-rgb), 0.35); stroke-width: 1; }
+.dagger-hub-ring { fill: none; stroke: rgba(var(--hue-rgb), 0.1); stroke-width: 6; }
+.dagger-mark { fill: none; stroke: var(--azy-accent); stroke-width: 2; stroke-linejoin: round; opacity: 0.9; }
+html.has-sigil .dagger-mark { display: none; }
+
+/* ---- 1 · halo: a static radial glow behind the disc that breathes (opacity + scale) --- */
+.dg-halo {
+  inset: 0; border-radius: 50%;
+  background: radial-gradient(circle closest-side, transparent 88%, rgba(var(--hue-rgb), 0.14) 91.5%, rgba(var(--hue-rgb), 0.05) 95.5%, transparent 100%);
+  opacity: 0; transition: opacity 200ms var(--azy-ease);
+}
+.dagger.open .dg-halo { opacity: 0.8; animation: dgBreathe 3.6s ease-in-out infinite alternate; }
+@keyframes dgBreathe { from { opacity: 0.55; transform: scale(0.985); } to { opacity: 0.95; transform: scale(1.015); } }
+
+/* ---- 2 · tick ring: slow rotation ----------------------------------------------------- */
+.dg-ticks { inset: 0; color: rgb(var(--hue-rgb)); opacity: 0; transition: opacity 220ms var(--azy-ease); }
+.dg-ticks circle { fill: none; stroke: currentColor; }
+.dg-tick-a { stroke-width: 5; stroke-dasharray: 1.2 10.2; opacity: 0.5; }
+.dg-tick-b { stroke-width: 9; stroke-dasharray: 1.6 112; opacity: 0.85; }
+.dagger.open .dg-ticks { opacity: 1; animation: dgSpin 80s linear infinite; }
+
+/* ---- 21 · rim sheen: a highlight that travels round the rim ----------------------------- */
+.dg-sheen { inset: 0; color: rgb(var(--hue-rgb)); opacity: 0; }
+.dg-sheen path { fill: none; stroke-width: 2.5; stroke-linecap: round; }
+.dagger.open .dg-sheen { opacity: 0.8; animation: dgSpin 7s linear infinite; }
+
+/* ---- 5 + 6 · the hover glow: one prerendered wedge that sweeps (shortest way) and fades - */
+.dg-wedge { inset: 0; opacity: 0; will-change: transform, opacity; transition: transform 150ms cubic-bezier(.3, .9, .3, 1), opacity 120ms var(--azy-ease); }
+.dg-wedge canvas { width: 100%; height: 100%; display: block; }
+.dagger.has-hover .dg-wedge { opacity: 1; }
+
+/* ---- 3 · hub ring: counter-rotating dashes ---------------------------------------------- */
+.dg-hubring { left: 150px; top: 150px; width: 160px; height: 160px; color: rgb(var(--hue-rgb)); opacity: 0; transition: opacity 200ms var(--azy-ease); }
+.dg-hubring circle { fill: none; stroke: currentColor; stroke-width: 1.4; stroke-dasharray: 18 7 3 7; opacity: 0.55; }
+.dagger.open .dg-hubring { opacity: 1; animation: dgSpin 26s linear infinite reverse; }
+
+/* ---- 4 · orbit sparks round the hub ----------------------------------------------------- */
+.dg-orbit { left: 140px; top: 140px; width: 180px; height: 180px; opacity: 0; transition: opacity 200ms var(--azy-ease); }
+.dg-orbit i { position: absolute; left: 50%; top: 0; width: 4px; height: 4px; margin-left: -2px; border-radius: 50%; background: rgb(var(--hue-rgb)); box-shadow: 0 0 6px 1px rgba(var(--azy-glow-rgb-user, var(--hue-rgb)), calc(0.7 * var(--azy-glow-k, 1))); }
+.dg-orbit i:nth-child(2) { transform: rotate(120deg); transform-origin: 2px 90px; opacity: 0.6; }
+.dg-orbit i:nth-child(3) { transform: rotate(240deg); transform-origin: 2px 90px; opacity: 0.35; width: 3px; height: 3px; }
+.dagger.open .dg-orbit { opacity: 1; animation: dgSpin 9s linear infinite; }
+
+/* ---- 22 · hub heartbeat: the hub's inner glow pulses ------------------------------------ */
+.dg-hubcore { left: 170px; top: 170px; width: 120px; height: 120px; border-radius: 50%; background: radial-gradient(circle, rgba(var(--hue-rgb), 0.22), transparent 68%); opacity: 0; }
+.dagger.open .dg-hubcore { opacity: 0.7; animation: dgBeat 2.8s ease-in-out infinite; }
+.dagger.has-hover .dg-hubcore { opacity: 1; }
+@keyframes dgBeat { 0%, 100% { transform: scale(0.94); } 12% { transform: scale(1.06); } 24% { transform: scale(0.98); } 36% { transform: scale(1.03); } }
+
+/* ---- 10 · hover pulse + 17 · commit shockwave (driven by WAAPI from the renderer) -------- */
+.dg-pulse, .dg-shock { left: 164px; top: 164px; width: 132px; height: 132px; border-radius: 50%; border: 1.5px solid rgb(var(--hue-rgb)); opacity: 0; }
+.dg-shock { border-width: 2px; }
+
+/* ---- 13 · needle glide + 14 · comet dot ------------------------------------------------- */
+.dagger-needle { left: 229px; top: 150px; width: 2px; height: 80px; transform-origin: 1px 80px; opacity: 0; transition: transform 60ms linear, opacity 150ms var(--azy-ease); }
+.dagger-needle i { position: absolute; left: 0; top: 0; width: 2px; height: 16px; border-radius: 2px; background: linear-gradient(rgb(var(--hue-rgb)), transparent); }
+.dagger.has-hover .dagger-needle { opacity: 1; }
+.dagger-dot, .dg-trail { left: 226px; top: 226px; width: 8px; height: 8px; border-radius: 50%; opacity: 0; will-change: transform; }
+.dagger-dot { background: var(--azy-accent); box-shadow: 0 0 8px 2px rgba(var(--azy-glow-rgb-user, var(--hue-rgb)), calc(0.5 * var(--azy-glow-k, 1))); transition: transform 50ms linear, opacity 120ms var(--azy-ease); }
+.dg-trail { background: rgba(var(--hue-rgb), 0.35); transform-origin: 50% 50%; transition: transform 190ms cubic-bezier(.2, .8, .2, 1), opacity 160ms var(--azy-ease); }
+.dagger.has-pointer .dagger-dot { opacity: 0.8; }
+.dagger.has-pointer .dg-trail { opacity: 0.6; }
+
+/* ---- hub: sigil + 12 · sigil dims & lifts on hover + 11 · hovered name crossfades in ---- */
+.dagger-sigil { left: 50%; top: 50%; width: 58px; height: 58px; margin: -29px 0 0 -29px; color: var(--azy-accent); transition: opacity 140ms var(--azy-ease), transform 180ms var(--azy-ease-out); }
+.dagger-sigil .azy-sigil { width: 100%; height: 100%; }
+.dagger.has-hover .dagger-sigil { opacity: 0.4; transform: translateY(-11px) scale(0.78); }
+.dg-hubname {
+  left: 50%; top: calc(50% + 14px); transform: translate(-50%, 0); max-width: 100px;
+  font-size: 11px; font-weight: 650; letter-spacing: 0.02em; color: var(--azy-text-1);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; opacity: 0; transition: opacity 120ms var(--azy-ease);
+}
+.dagger.has-hover .dg-hubname { opacity: 1; }
+.dagger.has-hover .dagger-wheel-name { opacity: 0; }
+
+/* ---- labels: 7 · icon pop · 8 · glyph wiggle · 9 · label lift · 15 · number fade ------- */
+.dagger-labels { inset: 0; }
+.dagger-label {
+  position: absolute; width: 130px; margin: -34px 0 0 -65px; text-align: center;
+  color: var(--azy-text-3); font-size: 13px; letter-spacing: 0.01em;
+  transform: translateY(4px); opacity: 0;
+  transition: color 120ms var(--azy-ease), transform 180ms var(--azy-ease-out), opacity 160ms var(--azy-ease);
+}
+.dagger.open .dagger-label { opacity: 1; transform: none; }
+.dagger-label .ic {
+  position: relative; display: grid; place-items: center; width: 40px; height: 40px; margin: 0 auto 8px; border-radius: 50%;
+  background: var(--azy-glass, rgba(20, 20, 20, 0.54)); border: 1px solid var(--azy-border-hair); color: var(--azy-text-2);
+  box-shadow: inset 0 1px 0 0 var(--azy-highlight);
+  transition: border-color 120ms var(--azy-ease), color 120ms var(--azy-ease), transform 160ms var(--azy-ease-out);
+}
+/* the icon glow is a radial layer that fades — no box-shadow repaint on hover */
+.dagger-label .ic::after { content: ''; position: absolute; inset: -12px; border-radius: 50%; background: radial-gradient(circle, rgba(var(--hue-rgb), 0.38), transparent 66%); opacity: 0; transition: opacity 140ms var(--azy-ease); z-index: -1; }
+.dagger-label .ic svg { width: 20px; height: 20px; }
+.dagger-label .lbl { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; transition: transform 160ms var(--azy-ease-out); }
+.dagger-label .kbd { display: block; margin-top: 3px; font-size: 10px; color: var(--faint); opacity: 0.55; transition: opacity 140ms var(--azy-ease), transform 160ms var(--azy-ease-out); }
+.dagger-label.hot { color: var(--azy-text-1); }
+.dagger-label.hot .ic { border-color: rgba(var(--hue-rgb), 0.7); color: var(--azy-accent); transform: scale(1.1); animation: dgPop 240ms var(--azy-ease-out, ease-out); }
+.dagger-label.hot .ic::after { opacity: 1; }
+.dagger-label.hot .ic svg { animation: dgWiggle 280ms var(--azy-ease-out, ease-out); }
+.dagger-label.hot .lbl { transform: translateY(-2px); }
+.dagger-label.hot .kbd { opacity: 1; transform: translateY(-2px); color: var(--azy-accent); }
+@keyframes dgPop { 0% { transform: scale(1); } 55% { transform: scale(1.18); } 100% { transform: scale(1.1); } }
+@keyframes dgWiggle { 0% { transform: rotate(0); } 30% { transform: rotate(-9deg); } 65% { transform: rotate(6deg); } 100% { transform: rotate(0); } }
+
+.dagger-caption { display: none; } /* the hub shows the hovered name; kept for the test hook */
+
+/* Stagger: labels + sectors bloom clockwise from 12 o'clock. */
+.dagger.open .sector:nth-child(2), .dagger.open .dagger-label:nth-child(2) { transition-delay: 18ms; }
+.dagger.open .sector:nth-child(3), .dagger.open .dagger-label:nth-child(3) { transition-delay: 36ms; }
+.dagger.open .sector:nth-child(4), .dagger.open .dagger-label:nth-child(4) { transition-delay: 54ms; }
+.dagger.open .sector:nth-child(5), .dagger.open .dagger-label:nth-child(5) { transition-delay: 72ms; }
+.dagger.open .sector:nth-child(6), .dagger.open .dagger-label:nth-child(6) { transition-delay: 90ms; }
+.dagger.open .dagger-label.hot, .dagger.open .dagger-label.hot * { transition-delay: 0ms; }
+
+/* Per-panel theme: each sector carries its own hue regardless of the active section. */
+html[data-theme="panels"] [data-sec="files"]   { --hue-rgb: 74, 222, 128; }
+html[data-theme="panels"] [data-sec="presets"] { --hue-rgb: 255, 92, 98; }
+html[data-theme="panels"] [data-sec="flow"]    { --hue-rgb: 75, 227, 255; }
+html[data-theme="panels"] [data-sec="snap"]    { --hue-rgb: 255, 210, 63; }
+html[data-theme="panels"] [data-sec="speed"]   { --hue-rgb: 75, 227, 255; }
+html[data-theme="panels"] [data-sec="settings"]{ --hue-rgb: 200, 200, 200; }
+[data-sec="all"] { --hue-rgb: 235, 235, 235; }
+html[data-theme="panels"] [data-sec="sfx"] { --hue-rgb: 74, 222, 128; }
+html[data-theme="panels"] [data-sec="preset"] { --hue-rgb: 255, 92, 98; }
+html[data-theme="panels"] [data-sec="flow"] .ic { color: rgb(75, 227, 255); }
+
+/* Eight-item wheels (SFX / Presets): tighter labels, smaller icons. */
+.dagger-label--tight { width: 104px; margin-left: -52px; font-size: 11.5px; }
+.dagger-label--tight .ic { width: 32px; height: 32px; margin-bottom: 5px; }
+.dagger-label--tight .ic svg { width: 16px; height: 16px; }
+/* Flow wheel: the preview (speed curve) is the icon — wider tile, name under it. */
+.dagger-label--flow .ic { width: 52px; height: 36px; border-radius: 8px; }
+.dagger-label--flow .ic::after { border-radius: 12px; }
+.dagger-label--flow .ic svg { width: 40px; height: 26px; }
+
+/* ---- 19 · the hub names the wheel, dropping in on open ---------------------------------- */
+.dagger-wheel-name { left: 50%; top: 50%; transform: translate(-50%, 22px); font-size: 9.5px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--faint); transition: opacity 120ms var(--azy-ease); }
+.dagger.open .dagger-wheel-name { animation: dgDrop 240ms 60ms var(--azy-ease-out, ease-out) backwards; }
+@keyframes dgDrop { from { opacity: 0; transform: translate(-50%, 12px); } }
+html[data-wheel="main"] .dagger-wheel-name { display: none; }
+html[data-wheel="sfx"] .dagger-wheel-name::before { content: "SFX"; }
+html[data-wheel="presets"] .dagger-wheel-name::before { content: "Presets"; }
+html[data-wheel="flow"] .dagger-wheel-name::before { content: "Flow"; }
+html[data-wheel="sfx"] .dagger-sigil, html[data-wheel="presets"] .dagger-sigil, html[data-wheel="flow"] .dagger-sigil { transform: translateY(-7px) scale(0.78); }
+html:is([data-wheel="sfx"], [data-wheel="presets"], [data-wheel="flow"]) .dagger.has-hover .dagger-sigil { transform: translateY(-13px) scale(0.66); }
+
+/* ---- 20 · empty wheel: one soft disc, the + tile bobs ----------------------------------- */
+[data-sec="empty"] { --hue-rgb: 200, 200, 200; }
+[data-sec="empty"] .ic { border-style: dashed; }
+.dagger.is-empty :is(.dagger-needle, .dagger-dot, .dg-trail, .dg-wedge) { display: none; }
+.dagger.is-empty .sector { opacity: 0.85; }
+.dagger.open.is-empty .dagger-label .ic { animation: dgBob 2.4s ease-in-out infinite; }
+@keyframes dgBob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-4px); } }
+
+@keyframes dgSpin { to { transform: rotate(360deg); } }
+
+/* ---- quality modes ------------------------------------------------------------------------ */
+/* Performance: all ambient loops off and the pure decoration hidden; hover, needle and the
+   open/close stay (short). Balanced keeps the slow loops, drops the busiest ones. */
+html[data-perf="performance"] .dagger :is(.dg-halo, .dg-ticks, .dg-sheen, .dg-hubring, .dg-orbit, .dg-hubcore, .dagger-label .ic, .dagger-label .ic svg, .dagger-wheel-name) { animation: none !important; }
+html[data-perf="performance"] .dagger :is(.dg-sheen, .dg-orbit, .dg-trail, .dagger-web) { display: none; }
+html[data-perf="balanced"] .dagger :is(.dg-sheen, .dg-orbit) { animation: none !important; display: none; }
+html[data-motion="reduced"] .dagger, html[data-motion="reduced"] .dagger * { animation: none !important; }
+html[data-motion="reduced"] .dagger, html[data-motion="reduced"] .dagger-label, html[data-motion="reduced"] .dagger-sigil { transform: none !important; transition-delay: 0s !important; }
+html[data-motion="reduced"] .dg-wedge { transition: opacity 120ms linear; }
+@media (prefers-reduced-motion: reduce) {
+  .dagger, .dagger * { animation: none !important; transition-delay: 0s !important; }
+}

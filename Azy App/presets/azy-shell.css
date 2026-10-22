@@ -1,0 +1,240 @@
+/* AZY Shell — main shell + navigation skin (v1.13).
+ *
+ * AZY Shell → Navigation → Active Workspace. Pure presentation on top of the existing markup
+ * (every id/class the renderers use stays where it was). Tokens only — no colour literals —
+ * so every accent, quality mode and motion setting flows through. Loaded right before
+ * azy-foundation.css; selectors carry html[data-theme] .minimal-ui #app so they beat the older
+ * minimal/palette passes without !important.
+ *
+ *   1. shell frame + workspace priority     5. sector switching (≤220 ms)
+ *   2. header: sigil · crumb · link chip    6. web thread + ambient (event-driven)
+ *   3. navigation rail + gliding pill       7. Dagger-free keyboard focus
+ *   4. sector states                        8. responsive / busy / quality modes
+ */
+
+/* ---------------------------------------------------------------------
+   1. SHELL FRAME — the window edge is a hairline; the workspace stays the brightest thing.
+   --------------------------------------------------------------------- */
+html[data-theme] .minimal-ui #app {
+  box-shadow: inset 0 0 0 1px var(--azy-border-hair), inset 0 1px 0 0 var(--azy-highlight);
+}
+html[data-theme] .minimal-ui #app .drag-handle .grabber { background: var(--azy-line-2); opacity: 0.7; }
+html[data-theme] .minimal-ui #app .drag-handle:hover .grabber { background: rgba(var(--hue-rgb), 0.45); opacity: 1; }
+
+/* ---------------------------------------------------------------------
+   2. HEADER — AZY sigil, where you are, the Premiere link, window controls
+   --------------------------------------------------------------------- */
+html[data-theme] .minimal-ui #app .app-chrome {
+  gap: var(--azy-sp-3); min-height: 32px; padding: 4px 10px 4px 12px;
+  background: color-mix(in srgb, var(--azy-depth-0) 70%, transparent);
+  border-bottom: 1px solid var(--azy-border-hair);
+  position: relative;
+}
+/* a single web strand under the header: the shell's only "decoration" line */
+html[data-theme] .minimal-ui #app .app-chrome::after {
+  content: ''; position: absolute; left: 0; right: 0; bottom: -1px; height: 1px; pointer-events: none;
+  background: linear-gradient(90deg, transparent 0%, rgba(var(--hue-rgb), calc(0.28 * var(--azy-deco-k))) 18%, transparent 46%, transparent 70%, rgba(var(--hue-rgb), calc(0.14 * var(--azy-deco-k))) 92%, transparent 100%);
+}
+html[data-theme] .minimal-ui #app .brand-lockup { gap: 7px; }
+html[data-theme] .minimal-ui #app .brand-mark {
+  width: 22px; height: 22px; border-radius: 0; border: 0; padding: 0;
+  background: none; box-shadow: none; color: var(--azy-accent);
+}
+html[data-theme] .minimal-ui #app .brand-mark .azy-sigil { width: 22px; height: 22px; }
+html[data-theme] .minimal-ui #app .brand-word {
+  font-size: 10.5px; font-weight: var(--azy-fw-semi); letter-spacing: 0.3em; color: var(--azy-text-2);
+}
+html[data-theme] .minimal-ui #app .workspace-copy {
+  display: inline-flex; align-items: center; gap: 8px; flex: 1 1 auto; min-width: 0;
+  visibility: visible; /* the all-in-one used to hide it; the crumb now names the sector */
+}
+html[data-theme] .minimal-ui #app .workspace-sep {
+  width: 5px; height: 5px; flex: none; transform: rotate(45deg);
+  border: 1px solid rgba(var(--hue-rgb), 0.55); background: transparent;
+}
+html[data-theme] .minimal-ui #app .workspace-title {
+  font-size: var(--azy-fs-body); font-weight: var(--azy-fw-med); color: var(--azy-text-1);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+html[data-theme] .minimal-ui #app :is(.workspace-eyebrow, .workspace-detail) { display: none; }
+html[data-theme] .minimal-ui #app .workspace-shortcut { margin-left: 0; opacity: 0.7; }
+html[data-theme] .minimal-ui #app .workspace-shortcut kbd {
+  padding: 2px 6px; border-radius: var(--azy-r-xs); font-size: 9.5px;
+  border: 1px solid var(--azy-border-hair); background: var(--azy-surface-input); color: var(--azy-text-3);
+}
+
+/* Premiere link chip: a node on a thread. Static in every state — it only pulses once on change. */
+html[data-theme] .minimal-ui #app .chrome-conn {
+  -webkit-app-region: no-drag;
+  display: inline-flex; align-items: center; gap: 6px; flex: none;
+  height: 22px; padding: 0 8px; border-radius: 999px; cursor: pointer;
+  border: 1px solid var(--azy-border-hair); background: var(--azy-surface-input);
+  color: var(--azy-text-3); font: inherit; font-size: var(--azy-fs-caption); letter-spacing: 0.02em;
+  transition: border-color var(--azy-dur-1) var(--azy-ease), color var(--azy-dur-1) var(--azy-ease), background-color var(--azy-dur-1) var(--azy-ease);
+}
+html[data-theme] .minimal-ui #app .chrome-conn:hover { color: var(--azy-text-2); border-color: var(--azy-border); background: var(--azy-hover-bg); }
+html[data-theme] .minimal-ui #app .chrome-conn:focus-visible { outline: none; box-shadow: var(--azy-focus-ring); }
+html[data-theme] .minimal-ui #app .chrome-conn-node {
+  position: relative; width: 6px; height: 6px; border-radius: 50%; flex: none;
+  background: var(--azy-text-4); box-shadow: 0 0 0 2px transparent;
+  transition: background-color var(--azy-dur-2) var(--azy-ease), box-shadow var(--azy-dur-2) var(--azy-ease);
+}
+/* the thread the node hangs on */
+html[data-theme] .minimal-ui #app .chrome-conn-node::before {
+  content: ''; position: absolute; left: 50%; bottom: 100%; width: 1px; height: 6px; margin-left: -0.5px;
+  background: currentColor; opacity: 0.35;
+}
+html[data-theme] .minimal-ui #app .chrome-conn[data-state="ok"] { color: var(--azy-text-2); }
+html[data-theme] .minimal-ui #app .chrome-conn[data-state="ok"] .chrome-conn-node {
+  background: var(--azy-accent); box-shadow: 0 0 0 2px rgba(var(--hue-rgb), 0.16), 0 0 calc(8px * var(--azy-glow-k)) rgba(var(--hue-rgb), calc(0.5 * var(--azy-glow-k)));
+}
+html[data-theme] .minimal-ui #app .chrome-conn[data-state="wait"] .chrome-conn-node { background: transparent; box-shadow: inset 0 0 0 1.5px var(--azy-warn); }
+html[data-theme] .minimal-ui #app .chrome-conn[data-state="err"] { color: var(--azy-err); border-color: color-mix(in srgb, var(--azy-err) 35%, transparent); }
+html[data-theme] .minimal-ui #app .chrome-conn[data-state="err"] .chrome-conn-node { background: var(--azy-err); }
+
+html[data-theme] .minimal-ui #app .win-btns { gap: 4px; margin-left: 2px; }
+html[data-theme] .minimal-ui #app .win-btn {
+  width: 26px; height: 22px; border-radius: var(--azy-r-sm);
+  border: 1px solid transparent; background: transparent; color: var(--azy-text-3);
+}
+html[data-theme] .minimal-ui #app .win-btn:hover { background: var(--azy-hover-bg); border-color: var(--azy-border-hair); color: var(--azy-text-1); }
+html[data-theme] .minimal-ui #app #winCloseBtn:hover { background: var(--azy-err-muted); border-color: color-mix(in srgb, var(--azy-err) 30%, transparent); color: var(--azy-text-1); }
+html[data-theme] .minimal-ui #app .win-btn:focus-visible { outline: none; box-shadow: var(--azy-focus-ring); }
+
+/* ---------------------------------------------------------------------
+   3. NAVIGATION RAIL — one glass track, a tinted pill that glides to the active sector
+   --------------------------------------------------------------------- */
+html[data-theme] .minimal-ui #app .mode-row {
+  gap: 2px; margin: 6px 10px 6px; padding: 3px;
+  border-radius: var(--azy-r-md);
+  background: color-mix(in srgb, var(--azy-depth-1) 62%, transparent);
+  border: 1px solid var(--azy-border-hair);
+  box-shadow: inset 0 1px 0 0 var(--azy-highlight);
+}
+html[data-theme] .minimal-ui #app .mode-tab {
+  flex: 1 1 0; min-width: 0; min-height: 28px; gap: 6px; padding: 5px 6px;
+  justify-content: center; border-radius: var(--azy-r-sm);
+  border: 1px solid transparent; background: transparent; box-shadow: none;
+  color: var(--azy-text-3); font-size: var(--azy-fs-body); font-weight: var(--azy-fw-med); letter-spacing: 0.01em;
+  transition: color var(--azy-dur-1) var(--azy-ease), background-color var(--azy-dur-1) var(--azy-ease), transform var(--azy-dur-1) var(--azy-ease);
+}
+html[data-theme] .minimal-ui #app .mode-tab svg {
+  width: 14px; height: 14px; flex: none; opacity: 0.72; filter: none; transform: none;
+  transition: opacity var(--azy-dur-1) var(--azy-ease), color var(--azy-dur-1) var(--azy-ease);
+}
+html[data-theme] .minimal-ui #app .mode-tab > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+html[data-theme] .minimal-ui #app .mode-kbd {
+  display: none; margin-left: 2px; padding: 0 4px; border-radius: 4px; font: inherit; font-size: 9px; line-height: 14px;
+  color: var(--azy-text-4); border: 1px solid var(--azy-border-hair);
+}
+html[data-theme] .minimal-ui #app .mode-sep { flex: none; width: 1px; height: 14px; margin: 0 3px; background: var(--azy-line-1); }
+
+/* the pill: tinted glass + thin accent edge + a web thread with two nodes along its bottom */
+html[data-theme] .minimal-ui #app .mode-pill {
+  /* containing block = the row's padding box, while the JS offset is measured from its border box */
+  top: 2px; bottom: 2px; left: -1px; border-radius: var(--azy-r-sm);
+  background-color: rgba(var(--hue-rgb), 0.07);
+  background-image: linear-gradient(180deg, rgba(var(--hue-rgb), 0.09), transparent);
+  border: 1px solid rgba(var(--hue-rgb), 0.34);
+  box-shadow: inset 0 1px 0 0 var(--azy-highlight), var(--azy-glow-soft);
+  transition: transform calc(180ms * var(--azy-speed-k, 1)) var(--azy-ease-out), width calc(180ms * var(--azy-speed-k, 1)) var(--azy-ease-out), opacity var(--azy-dur-1) var(--azy-ease);
+}
+html[data-theme] .minimal-ui #app .mode-pill::after {
+  content: ''; position: absolute; left: 22%; right: 22%; bottom: -1px; height: 1px;
+  background: rgba(var(--hue-rgb), 0.9);
+  box-shadow: 0 0 calc(6px * var(--azy-glow-k)) rgba(var(--hue-rgb), calc(0.7 * var(--azy-glow-k)));
+}
+html[data-theme] .minimal-ui #app .mode-pill::before {
+  content: ''; position: absolute; left: calc(22% - 2px); right: calc(22% - 2px); bottom: -2.5px; height: 4px;
+  background:
+    radial-gradient(circle, rgba(var(--hue-rgb), 1) 1.5px, transparent 2px) left center / 4px 4px no-repeat,
+    radial-gradient(circle, rgba(var(--hue-rgb), 1) 1.5px, transparent 2px) right center / 4px 4px no-repeat;
+}
+/* while a press is travelling, the pill is a lighter ghost until the click lands */
+html[data-theme] .minimal-ui #app .mode-row.is-pressing .mode-pill { opacity: 0.7; }
+
+/* ---------------------------------------------------------------------
+   4. SECTOR STATES — quiet by default; only the active sector is lit
+   --------------------------------------------------------------------- */
+html[data-theme] .minimal-ui #app .mode-tab:hover:not(.active) { color: var(--azy-text-2); background: var(--azy-hover-bg); }
+html[data-theme] .minimal-ui #app .mode-tab:hover:not(.active) svg { opacity: 1; color: color-mix(in srgb, var(--azy-accent) 55%, var(--azy-text-2)); }
+html[data-theme] .minimal-ui #app .mode-tab:active:not(:disabled) { transform: scale(var(--azy-press-scale, 0.97)); }
+html[data-theme] .minimal-ui #app .mode-tab:focus-visible { outline: none; box-shadow: var(--azy-focus-ring); }
+html[data-theme] .minimal-ui #app .mode-tab.active {
+  color: var(--azy-text-1); background: transparent; border-color: transparent; box-shadow: none; font-weight: var(--azy-fw-semi);
+}
+html[data-theme] .minimal-ui #app .mode-tab.active svg { opacity: 1; color: var(--azy-accent); }
+html[data-theme] .minimal-ui #app .mode-tab.active .mode-kbd { color: var(--azy-text-3); border-color: rgba(var(--hue-rgb), 0.25); }
+/* launchers (Speed) open a window: no active state, a small outward arrow on hover */
+html[data-theme] .minimal-ui #app .mode-tab--launch:hover svg { color: var(--azy-accent); }
+
+/* ---------------------------------------------------------------------
+   5. SECTOR SWITCHING — ≤220 ms total, interactive from the first frame
+   --------------------------------------------------------------------- */
+html[data-theme] .minimal-ui #app .pane:not([hidden]) { animation-duration: 170ms; }
+html[data-theme] .minimal-ui #app .pane:not([hidden]) > * { animation-duration: 170ms; }
+html[data-theme] .minimal-ui #app .pane:not([hidden]) > :nth-child(2) { animation-delay: 16ms; }
+html[data-theme] .minimal-ui #app .pane:not([hidden]) > :nth-child(3) { animation-delay: 32ms; }
+html[data-theme] .minimal-ui #app .pane:not([hidden]) > :nth-child(n+4) { animation-delay: 48ms; }
+html[data-theme] .minimal-ui #app .pane--settings:not([hidden]) > * { animation-delay: 0ms; }
+html[data-perf="performance"] .minimal-ui #app .pane:not([hidden]),
+html[data-perf="performance"] .minimal-ui #app .pane:not([hidden]) > * { animation-duration: 110ms; animation-delay: 0ms; }
+
+/* ---------------------------------------------------------------------
+   6. WEB MOMENTS — a thread from the active tab into the workspace; faint ambient pulse
+   --------------------------------------------------------------------- */
+.azy-nav-thread {
+  position: fixed; z-index: 1090; width: 1px; height: 22px; margin-left: -0.5px; pointer-events: none;
+  background: linear-gradient(180deg, rgba(var(--hue-rgb), 0.85), rgba(var(--hue-rgb), 0));
+  transform-origin: top center; transform: scaleY(0); opacity: 0;
+}
+.azy-nav-thread::after {
+  content: ''; position: absolute; left: 50%; bottom: -2px; width: 4px; height: 4px; margin-left: -2px; border-radius: 50%;
+  background: rgba(var(--hue-rgb), 0.9); box-shadow: 0 0 calc(6px * var(--azy-glow-k)) rgba(var(--hue-rgb), calc(0.6 * var(--azy-glow-k)));
+}
+.azy-nav-thread.is-on { animation: azyNavThread calc(220ms * var(--azy-speed-k, 1)) var(--azy-ease-out) both; }
+@keyframes azyNavThread {
+  0% { transform: scaleY(0); opacity: 0.9; }
+  55% { transform: scaleY(1); opacity: 0.9; }
+  100% { transform: scaleY(1) translateY(6px); opacity: 0; }
+}
+.azy-fx--faint { opacity: 0.35; }
+.azy-fx--faint.azy-fx--pulse { animation-duration: calc(900ms * var(--azy-speed-k, 1)); }
+
+/* ---------------------------------------------------------------------
+   7. RESPONSIVE — same identity, fewer words and less decoration as space shrinks
+   --------------------------------------------------------------------- */
+/* expanded: icon + label + shortcut */
+@media (min-width: 860px) {
+  html[data-theme] .minimal-ui #app .mode-kbd { display: inline-block; }
+}
+/* medium: icon + label; the header crumb stays */
+@media (max-width: 620px) {
+  html[data-theme] .minimal-ui #app .chrome-conn-label { display: none; }
+  html[data-theme] .minimal-ui #app .chrome-conn { width: 22px; padding: 0; justify-content: center; }
+  html[data-theme] .minimal-ui #app .app-chrome::after { opacity: 0.6; }
+}
+/* small: icon-only rail (labels live in the glass tooltip), no Ctrl F hint */
+@media (max-width: 560px) {
+  html[data-theme] .minimal-ui #app .mode-tab > span { display: none; }
+  html[data-theme] .minimal-ui #app .mode-tab { padding: 5px 0; }
+  html[data-theme] .minimal-ui #app .workspace-shortcut { display: none; }
+}
+/* narrow: header drops the wordmark, the rail tightens, no web strand */
+@media (max-width: 400px) {
+  html[data-theme] .minimal-ui #app .brand-word { display: none; }
+  html[data-theme] .minimal-ui #app .app-chrome { gap: var(--azy-sp-2); padding-inline: 8px 6px; }
+  html[data-theme] .minimal-ui #app .mode-row { margin-inline: 6px; }
+  html[data-theme] .minimal-ui #app .mode-sep { margin: 0 1px; }
+  html[data-theme] .minimal-ui #app .app-chrome::after { display: none; }
+}
+
+/* ---------------------------------------------------------------------
+   8. QUALITY / BUSY — decoration yields first
+   --------------------------------------------------------------------- */
+html[data-perf="performance"] .minimal-ui #app .mode-pill { box-shadow: inset 0 1px 0 0 var(--azy-highlight); transition-duration: calc(90ms * var(--azy-speed-k, 1)); }
+html:is([data-busy], .azy-art-off) :is(.azy-nav-thread, .azy-fx--faint) { display: none; }
+html:is([data-busy], .azy-art-off) .azy-character-layer { opacity: 0; transition: opacity calc(120ms * var(--azy-speed-k, 1)) linear; }
+html[data-motion="reduced"] .minimal-ui #app .mode-pill { transition: none; }
+html[data-motion="reduced"] .azy-nav-thread { display: none; }
+body.is-dedicated .chrome-conn { display: inline-flex; }

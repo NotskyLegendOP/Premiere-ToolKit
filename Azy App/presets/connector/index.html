@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Azy</title>
+    <script>
+      // Runs before the bundle: if index.js fails to load or throws, the panel says so instead of staying blank.
+      window.__azyBootErrors = [];
+      window.addEventListener("error", function (e) {
+        var msg = (e && (e.message || (e.error && e.error.message))) || "unknown error";
+        window.__azyBootErrors.push(msg);
+        var el = document.getElementById("status"); var d = document.getElementById("detail");
+        if (el) el.textContent = "Azy runtime failed to start";
+        if (d) d.textContent = msg + " — use Repair in the Azy app, or copy this text to Azy support.";
+      });
+      window.addEventListener("unhandledrejection", function (e) {
+        var msg = (e && e.reason && (e.reason.message || String(e.reason))) || "unhandled rejection";
+        window.__azyBootErrors.push(msg);
+        var d = document.getElementById("detail"); if (d && !d.textContent) d.textContent = msg;
+      });
+      // CEP with Node enabled defines module/exports globally; keep the bundle's CJS wrapper honest.
+      if (typeof module === "object") { window.__cepModule = module; module = undefined; }
+    </script>
+    <script defer src="./index.js"></script>
+    <style>
+      html, body { height: 100%; }
+      body { margin: 0; padding: 0; display: flex; flex-direction: column; background: #060606; }
+      #native { padding: 10px 12px; }
+      /* Azy inside Premiere: the app's UI fills the panel once connected. */
+      #azy { display: none; flex: 1; min-height: 240px; }
+      #azy iframe { width: 100%; height: 100%; border: none; }
+      body { font: 12px/1.4 system-ui, -apple-system, "Segoe UI", sans-serif; color: #ddd; }
+      h3 { margin: 0 0 6px; font-size: 13px; font-weight: 600; }
+      .row { display: flex; align-items: center; gap: 8px; margin: 6px 0; }
+      .dot { width: 8px; height: 8px; border-radius: 50%; background: #666; flex: none; }
+      .dot.on { background: #3ddc84; }
+      .dot.wait { background: #f5a623; }
+      #detail { opacity: 0.8; }
+      #pair { display: none; margin-top: 8px; padding: 8px; border: 1px solid rgba(255,255,255,.15); border-radius: 6px; }
+      #pair.show { display: block; }
+      input { width: 96px; font: inherit; padding: 3px 6px; background: #111; color: #eee; border: 1px solid #333; border-radius: 4px; }
+      button { font: inherit; padding: 3px 10px; background: #1a1a1a; color: #eee; border: 1px solid #333; border-radius: 4px; }
+      button:disabled { opacity: .5; }
+      #log { margin-top: 10px; max-height: 160px; overflow: auto; font: 11px/1.35 ui-monospace, monospace; opacity: .75; white-space: pre-wrap; }
+      #adv { display: none; margin-top: 8px; }
+      #advToggle { background: none; border: none; color: #888; padding: 0; margin-top: 10px; cursor: pointer; }
+      #ver { margin-top: 6px; font-size: 10px; opacity: .5; }
+      #busy { display: none; position: fixed; inset: 0; background: rgba(6,6,6,.82); z-index: 10; align-items: center; justify-content: center; }
+      #busy.show { display: flex; }
+      .busy-card { text-align: center; padding: 18px 22px; border: 1px solid rgba(255,255,255,.12); border-radius: 10px; background: #0c0c0c; min-width: 220px; }
+      .busy-spin { width: 22px; height: 22px; margin: 0 auto 10px; border-radius: 50%; border: 2px solid rgba(255,255,255,.15); border-top-color: #eee; animation: azyspin .8s linear infinite; }
+      @keyframes azyspin { to { transform: rotate(360deg); } }
+      #busyTitle { font-weight: 600; margin-bottom: 4px; }
+      #busyText { opacity: .75; margin-bottom: 10px; }
+    </style>
+  </head>
+  <body>
+    <div id="native">
+      <h3>Azy</h3>
+      <div class="row"><span id="dot" class="dot"></span><span id="status">Starting…</span></div>
+      <div id="detail"></div>
+      <div id="pair">
+        <div>Link with a code</div>
+        <div id="pairHint" style="opacity:.75;margin:2px 0 6px"></div>
+        <div class="row"><input id="code" placeholder="Code" inputmode="numeric" maxlength="6" /><input id="port" placeholder="Port" inputmode="numeric" maxlength="5" style="width:56px" /><button id="pairBtn">Link</button><button id="retryBtn" title="Search for Azy again">Retry</button></div>
+      </div>
+      <button id="advToggle">Advanced</button>
+      <div id="adv">
+        <button id="forgetBtn">Reset link</button>
+        <div id="log"></div>
+      </div>
+      <div id="ver"></div>
+    </div>
+    <div id="azy"></div>
+  </body>
+</html>

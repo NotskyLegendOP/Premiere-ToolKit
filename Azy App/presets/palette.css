@@ -1,0 +1,77 @@
+/* Shared final colour layer: desktop, Premiere panel, player and utility windows.
+   Only UI chrome is tinted; decoded media and semantic warning/error colours are not. */
+html[data-theme] {
+  color-scheme: dark;
+  --accent: var(--hue); --accent-2: var(--hue-deep); --accent-3: var(--hue-soft);
+  --azy-teal: var(--hue); --azy-teal-soft: var(--hue-soft); --azy-ambient-rgb: var(--hue-rgb);
+  --shell: #070707; --surface: #0d0d0d; --surface-high: #151515;
+  --line: rgba(var(--hue-rgb),.12); --line-hi: rgba(var(--hue-rgb),.26);
+}
+html[data-theme="mono"] { --hue: #e5eaf0; --hue-deep: #aab6c5; --hue-soft: #f2f5fa; --hue-rgb: 229,234,240; }
+html[data-theme] body { accent-color: var(--accent); }
+html[data-theme] body.minimal-ui {
+  --line: rgba(var(--hue-rgb),.10); --line-hi: rgba(var(--hue-rgb),.26);
+  --raised: rgba(var(--hue-rgb),.04); --raised-hi: rgba(var(--hue-rgb),.09);
+  background: var(--shell);
+}
+html[data-theme] .minimal-ui #app {
+  background: radial-gradient(ellipse at 0 0,rgba(var(--hue-rgb),.045),transparent 56%),
+    linear-gradient(155deg,#0e0e0e 0%,#080808 56%,#050505 100%);
+}
+html[data-theme] .minimal-ui #app :is(.app-chrome,.statusbar) { background: rgba(5, 5, 5, .72); }
+html[data-theme] .minimal-ui #app :is(.compact-header,.settings-hero) {
+  background: linear-gradient(100deg,rgba(var(--hue-rgb),.035),transparent 72%);
+}
+html[data-theme] .minimal-ui #app :is(.flow-editor,.file-sort-control select,.snap-keycap) { background: var(--surface); }
+html[data-theme] :is(.thumb--folder,.files-sidebar-nav-item svg,.empty-orb,.brand-mark) { color: var(--accent); }
+html[data-theme] .minimal-ui #app .thumb--folder { color: var(--accent); background: rgba(var(--hue-rgb),.06); }
+html[data-theme] .minimal-ui #app :is(.thumb--file,.thumb--audio) { color: var(--accent-3); }
+html[data-theme] :is(.flow-handle,.flow-control-point) { fill: var(--accent); stroke: var(--surface); }
+html[data-theme] .minimal-ui #app :is(.settings-cat.active,.settings-cat.active .settings-cat-icon,.snap-seg-btn.active) { background: var(--raised-hi); color: var(--accent-3); border-color: var(--line-hi); }
+html[data-theme] :is(.preview-panel,.welcome-card,.modal-card,.snap-shell,.speed-shell,.action-card) {
+  background: linear-gradient(145deg,#0f0f0f,#060606); border-color: var(--line-hi);
+}
+html[data-theme] :is(button,a,input,select,textarea,[tabindex]):focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+html[data-theme] ::selection { background: rgba(var(--hue-rgb),.28); color: var(--accent-3); }
+html[data-theme] :is(.btn,.snap-btn,.speed-btn,.action-card button):hover:not(:disabled) { border-color: var(--line-hi); background-color: rgba(var(--hue-rgb),.12); color: var(--accent-3); }
+html[data-theme] .btn--primary, html[data-theme] .btn--primary:hover { color: #070707; background: linear-gradient(135deg,var(--accent),var(--accent-2)); box-shadow: 0 6px 20px -8px rgba(var(--azy-glow-rgb-user, var(--hue-rgb)), calc(.32 * var(--azy-glow-k, 1))); }
+html[data-theme] .vol::-webkit-slider-thumb { background: var(--accent); }
+html[data-theme] .snap-body, html[data-theme] .speed-body { background: transparent; }
+/* No idle animation or per-thumbnail gradient: large folders remain cheap to paint. */
+@media (prefers-reduced-motion: reduce) {
+  /* The theme engine owns explicit Motion choices; functional web feedback (.azy-fx) stays as a quick fade. */
+  html[data-theme]:not([data-motion="full"]) :not(.azy-fx, .azy-fx *), html[data-theme]:not([data-motion="full"]) :not(.azy-fx)::before, html[data-theme]:not([data-motion="full"]) :not(.azy-fx)::after {
+    animation-duration: .001ms !important; animation-iteration-count: 1 !important;
+    transition-duration: .001ms !important; scroll-behavior: auto !important;
+  }
+}
+/* Neutralise legacy teal-only surfaces, including secondary controls and transient UI. */
+html[data-theme] .minimal-ui #app { --line: rgba(var(--hue-rgb),.10); --line-hi: rgba(var(--hue-rgb),.25); }
+html[data-theme] .minimal-ui #app :is(.snap-seg,.snap-keycap,.flow-graph,.flow-curve-nums input,.flow-editor select) { background-color: var(--surface); border-color: var(--line-hi); }
+html[data-theme] .minimal-ui #app #fileGrid .thumb { background: rgba(var(--hue-rgb),.045); border-color: var(--line); }
+html[data-theme] .minimal-ui #app #fileGrid .thumb--folder { background: rgba(var(--hue-rgb),.06); }
+html[data-theme] .minimal-ui #app :is(.settings-rail,.files-list-sidebar,.files-utility-row,.preset-command-bar,.flow-command-bar) { border-color: var(--line); }
+html[data-theme] :is(.flow-target.is-ok .flow-target-dot,.settings-status-dot) { box-shadow: 0 0 8px rgba(var(--azy-glow-rgb-user, var(--hue-rgb)), calc(.4 * var(--azy-glow-k, 1))); }
+html[data-theme] :is(.preview-sheet,.welcome,.snap-dialog,.snap,.speed-main,.azy-speed-prompt,.azy-pair) { background: linear-gradient(145deg,#0e0e0e,#060606); border-color: var(--line-hi); }
+html[data-theme] :is(.snap-head,.snap-foot,.toast,.wheel-pop) { background: var(--surface); border-color: var(--line-hi); }
+html[data-theme] .snap-body .snap-row.active { background: rgba(var(--hue-rgb),.08); }
+html[data-theme] .player-body { background: var(--shell); }
+html[data-theme] .player-body #artwork { color: var(--accent); }
+html[data-theme] .player-body .controls { border-color: var(--line-hi); }
+html[data-theme] .player-body #seek::-webkit-slider-thumb { background: var(--accent); box-shadow: 0 0 12px -1px rgba(var(--azy-glow-rgb-user, var(--hue-rgb)), calc(.4 * var(--azy-glow-k, 1))); }
+html[data-theme] .player-body .played { box-shadow: 0 0 14px -2px rgba(var(--azy-glow-rgb-user, var(--hue-rgb)), calc(.35 * var(--azy-glow-k, 1))); }
+/* v1.21: transparent like Snap/Speed — the Dagger window is transparent, so its glass card (and the
+   toast's rounded corners) show the desktop instead of a solid shell-coloured rectangle. */
+html[data-theme] .dagger-action-body { background: transparent; }
+html[data-theme] .dagger-action-body main { background: radial-gradient(ellipse at top right,rgba(var(--hue-rgb),.06),transparent 70%),linear-gradient(145deg,#0d0d0d,#050505); }
+html[data-theme] .dagger-action-body #spinner { border-color: var(--line-hi); border-top-color: var(--accent); }
+/* Dagger's neutral sectors, rim, hub, pointer and glow must follow the palette too. */
+html[data-theme]:not([data-skin="glow"]) .dagger .sector:not(.picked) { fill: rgba(5, 5, 5, .94); stroke: rgba(var(--hue-rgb),.15); }
+html[data-theme] :is(.dagger-rim,.dagger-hub) { stroke: rgba(var(--hue-rgb),.18); }
+html[data-theme] .dagger-hub { fill: rgba(5, 5, 5, .97); }
+html[data-theme] .dagger-hub-ring { stroke: rgba(var(--hue-rgb),.08); }
+html[data-theme] .dagger-dot { background: var(--accent); }
+html[data-theme] #hubGlow stop { stop-color: var(--accent); }
+html[data-theme] .dagger-label:not(.hot) .ic { background: rgba(var(--hue-rgb),.04); border-color: rgba(var(--hue-rgb),.11); color: rgba(var(--hue-rgb),.9); }
+html[data-theme]:not([data-theme="panels"]) [data-sec="all"],
+html[data-theme]:not([data-theme="panels"]) [data-sec="empty"] { --hue-rgb: inherit; }

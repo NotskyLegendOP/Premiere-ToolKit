@@ -1,0 +1,507 @@
+/* =====================================================================
+   AZY SPIDER FOUNDATION (v1.12) — the global web-tech visual layer.
+
+   Loaded LAST in every window, after the feature stylesheets, so it can
+   re-skin shared surfaces purely through tokens. It never changes layout
+   (no sizes, paddings or display of existing components) — only colour,
+   depth, glass, borders, glow and motion. Sections are NOT redesigned
+   here; they inherit.
+
+   Sources of truth:
+     design-tokens.css         every value (depth, glass, borders, glow,
+                               states, type, icons, web ladder, motion)
+     presets/themes.css        accent palettes (--hue*)
+     presets/azy-theme-engine  <html data-theme|data-perf|data-motion|
+                               data-webs|data-characters>
+     presets/azy-web.js        web geometry → --azy-web-mask-* / --azy-web-bg-*
+   No colour literals below: everything is a token or the accent.
+   ===================================================================== */
+
+/* ---------------------------------------------------------------------
+   1. QUALITY MODES + MOTION → the four dials
+   --------------------------------------------------------------------- */
+html[data-perf="balanced"] {
+  --azy-blur: 8px; --azy-blur-strong: 10px;
+  --azy-glow-perf: 1; --azy-deco-perf: 0.6; /* the Glow On/Off switch is the user's — quality modes never scale it */
+  --azy-glass-alpha: 0.64; --azy-glass-alpha-strong: 0.84;
+}
+html[data-perf="performance"] {
+  --azy-blur: 0px; --azy-blur-strong: 0px;
+  --azy-glow-perf: 1; --azy-deco-perf: 0; /* static glows follow the Glow switch; animated/blurred deco stays off */
+  --azy-glass-alpha: 0.92; --azy-glass-alpha-strong: 0.97;
+  --azy-motion-k: calc(0.6 * var(--azy-speed-k, 1)); --azy-motion-amp: 0;
+}
+html[data-motion="reduced"] { --azy-motion-k: calc(0.5 * var(--azy-speed-k, 1)); --azy-motion-amp: 0; }
+
+/* Performance: no backdrop blur anywhere (the most expensive effect), no decorative motion. */
+html[data-perf="performance"] *,
+html[data-perf="performance"] *::before,
+html[data-perf="performance"] *::after { backdrop-filter: none !important; -webkit-backdrop-filter: none !important; }
+html[data-perf="performance"] :is(.azy-art *, .welcome-art, .empty-art, .speed-art, .azy-art-corner) { animation: none !important; }
+/* The artwork sprite (every art instance is a <use> of it) only animates while an artwork is on
+   screen — otherwise its loops keep the window rendering 60 fps at idle. See azy-artwork.js. */
+#azyArtSpriteHost * { animation-play-state: paused !important; }
+html.azy-art-live #azyArtSpriteHost * { animation-play-state: running !important; }
+html[data-perf="performance"] #azyArtSpriteHost * { animation: none !important; }
+html[data-perf="performance"] #app::before { animation: none !important; }
+html[data-perf="performance"] .azy-art-draw { stroke-dashoffset: 0; }
+
+/* Reduced motion (OS or Settings): decoration stops, functional feedback stays (as fades). */
+html[data-motion="reduced"] *:not(.azy-fx):not(.azy-fx *),
+html[data-motion="reduced"] *:not(.azy-fx)::before,
+html[data-motion="reduced"] *:not(.azy-fx)::after {
+  animation-duration: 0.001ms !important; animation-iteration-count: 1 !important;
+  transition-duration: 0.001ms !important; scroll-behavior: auto !important;
+}
+html[data-motion="reduced"] .azy-art-draw { stroke-dashoffset: 0; }
+
+/* ---------------------------------------------------------------------
+   2. GLOBAL BASE — depth ladder + neutral lines (accent only where it means something)
+   --------------------------------------------------------------------- */
+html[data-theme] {
+  --shell: var(--azy-depth-0t);
+  --surface: var(--azy-depth-1t);
+  --surface-high: var(--azy-depth-2t);
+  --line: var(--azy-border);
+  --line-hi: rgba(var(--hue-rgb), 0.26);
+}
+html[data-theme] body.minimal-ui,
+html[data-theme] .minimal-ui #app { --line: var(--azy-border-hair); --line-hi: rgba(var(--hue-rgb), 0.24); --raised: var(--azy-hover-bg); }
+/* Font safety net. A literal stack on <html> (not only via var(--azy-font)): if a custom property
+   ever fails to resolve, font-family resets to Chromium's default — Times New Roman — which is how
+   whole windows turned serif. Form controls don't inherit fonts by default; make them. */
+html { font-family: "Segoe UI Variable Text", "Segoe UI", system-ui, -apple-system, sans-serif; }
+:where(button, input, select, textarea, optgroup) { font-family: inherit; }
+html[data-theme] body { font-family: var(--azy-font, "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif); }
+
+/* The shell: five darks + one accent-lit corner + a background web (baked per accent, 3-8%). */
+html[data-theme] .minimal-ui #app {
+  background:
+    var(--azy-web-bg-corner, none) top right / min(46vw, 360px) auto no-repeat,
+    var(--azy-web-bg-corner-bl, none) bottom left / min(30vw, 220px) auto no-repeat,
+    radial-gradient(ellipse at 100% 0, rgba(var(--hue-rgb), calc(0.07 * var(--azy-glow-k))), transparent 52%),
+    linear-gradient(162deg, var(--azy-depth-2t) 0%, var(--azy-depth-1) 48%, var(--azy-depth-0) 100%);
+}
+html[data-theme] .minimal-ui #app :is(.app-chrome, .statusbar) { background: color-mix(in srgb, var(--azy-depth-0) 76%, transparent); }
+html[data-webs="off"] .minimal-ui #app {
+  background:
+    radial-gradient(ellipse at 100% 0, rgba(var(--hue-rgb), calc(0.07 * var(--azy-glow-k))), transparent 52%),
+    linear-gradient(162deg, var(--azy-depth-2t) 0%, var(--azy-depth-1) 48%, var(--azy-depth-0) 100%);
+}
+/* The old full-window "spider motif" veil is superseded by the web layer. */
+html.spider-mode #app::after { content: none; }
+
+/* ---------------------------------------------------------------------
+   3. GLASS SYSTEM — one recipe, five roles
+   translucent depth + controlled blur + hairline border + inner highlight + soft shadow
+   --------------------------------------------------------------------- */
+.azy-glass,
+.azy-glass--panel,
+.azy-glass--card,
+.azy-glass--float,
+.azy-popup {
+  background: var(--azy-glass-tint), var(--azy-glass);
+  backdrop-filter: var(--azy-glass-filter);
+  -webkit-backdrop-filter: var(--azy-glass-filter);
+  border: 1px solid var(--azy-border);
+  box-shadow: var(--azy-highlight), var(--azy-shadow-2);
+}
+.azy-glass--panel { border-radius: var(--azy-r-lg); }
+.azy-glass--card { border-radius: var(--azy-r-md); box-shadow: var(--azy-highlight), var(--azy-shadow-1); }
+.azy-glass--float,
+.azy-popup {
+  background: var(--azy-glass-tint), var(--azy-glass-strong);
+  backdrop-filter: var(--azy-glass-filter-strong);
+  -webkit-backdrop-filter: var(--azy-glass-filter-strong);
+  border-color: var(--azy-border-accent-soft);
+  border-radius: var(--azy-r-xl);
+  box-shadow: var(--azy-highlight), var(--azy-shadow-3), var(--azy-glow-soft);
+}
+.azy-surface-0 { background: var(--azy-depth-0); }
+.azy-surface-1 { background: var(--azy-depth-1t); }
+.azy-surface-2 { background: var(--azy-depth-2t); border: 1px solid var(--azy-border-hair); }
+
+/* Existing shared popups inherit the float glass (colour/depth only — layout untouched). */
+html[data-theme] :is(.preview-panel, .welcome-card, .modal-card, .action-card, .snap-dialog, .wheel-pop, .azy-wait-card) {
+  background: var(--azy-glass-tint), var(--azy-glass-strong);
+  backdrop-filter: var(--azy-glass-filter-strong);
+  -webkit-backdrop-filter: var(--azy-glass-filter-strong);
+  border-color: var(--azy-border-accent-soft);
+  box-shadow: var(--azy-highlight), var(--azy-shadow-3), var(--azy-glow-soft);
+}
+/* Whole-window surfaces (Snap, Speed, pairing, welcome): solid depth, no blur needed. */
+html[data-theme] :is(.preview-sheet, .welcome, .snap, .speed-main, .azy-speed-prompt, .azy-pair, .snap-shell, .speed-shell) {
+  background: var(--azy-glass-tint), linear-gradient(160deg, var(--azy-depth-2t), var(--azy-depth-0) 70%);
+  border-color: var(--azy-border-accent-soft);
+}
+html[data-theme] :is(.snap-head, .snap-foot) { background: var(--azy-depth-1t); border-color: var(--azy-border-hair); }
+
+/* Notifications: dark glass, a thin status edge, never a giant banner. */
+html[data-theme] .toast {
+  color: var(--azy-text-1);
+  background: var(--azy-glass-tint), var(--azy-glass-strong);
+  backdrop-filter: var(--azy-glass-filter-strong);
+  -webkit-backdrop-filter: var(--azy-glass-filter-strong);
+  border-color: var(--azy-border-strong);
+  box-shadow: var(--azy-highlight), var(--azy-shadow-2);
+}
+html[data-theme] .toast--success { border-color: color-mix(in srgb, var(--azy-ok) 45%, transparent); }
+html[data-theme] .toast--warn { border-color: color-mix(in srgb, var(--azy-warn) 45%, transparent); }
+html[data-theme] .toast--error { border-color: color-mix(in srgb, var(--azy-err) 55%, transparent); box-shadow: var(--azy-highlight), var(--azy-shadow-2), 0 0 calc(16px * var(--azy-glow-k)) -8px var(--azy-err); }
+
+/* ---------------------------------------------------------------------
+   4. INTERACTION STATES — one behaviour for every control
+   click → immediate visual response (no transition delay on press) → action → result
+   --------------------------------------------------------------------- */
+.azy-btn,
+.azy-input,
+.azy-menu-item,
+.azy-chip {
+  font: var(--azy-type-control);
+  color: var(--azy-text-1);
+  border: 1px solid var(--azy-border);
+  border-radius: var(--azy-r-sm);
+  background: color-mix(in srgb, var(--azy-depth-2) 70%, transparent);
+  box-shadow: var(--azy-highlight);
+  transition: background-color var(--azy-fx-fast) var(--azy-ease), border-color var(--azy-fx-fast) var(--azy-ease),
+    box-shadow var(--azy-fx) var(--azy-ease), color var(--azy-fx-fast) var(--azy-ease), transform var(--azy-fx-fast) var(--azy-ease);
+}
+.azy-btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 28px; padding: 0 12px; cursor: pointer; user-select: none; }
+.azy-btn--icon { width: 28px; padding: 0; }
+.azy-chip { display: inline-flex; align-items: center; gap: 5px; min-height: 24px; padding: 0 9px; border-radius: 999px; font: var(--azy-type-caption); }
+.azy-input { min-height: 28px; padding: 0 10px; background: var(--azy-surface-input); font: var(--azy-type-body); outline: none; }
+.azy-input::placeholder { color: var(--azy-text-3); }
+
+:is(.azy-btn, .azy-menu-item, .azy-chip):hover:not(:disabled):not([aria-disabled="true"]) { background: var(--azy-hover-bg); border-color: var(--azy-hover-border); }
+.azy-input:hover { border-color: var(--azy-hover-border); }
+/* Pressed: instant (no easing on the way in), tiny scale + brightness. */
+:is(.azy-btn, .azy-menu-item, .azy-chip):active:not(:disabled) { transform: scale(var(--azy-press-scale)); filter: brightness(var(--azy-press-bright)); transition-duration: 0ms; }
+:is(.azy-btn, .azy-input, .azy-menu-item, .azy-chip):focus-visible { outline: none; box-shadow: var(--azy-highlight), var(--azy-focus-ring); }
+/* Selected: dark tinted surface + thin accent edge + subtle glow. */
+:is(.azy-btn, .azy-menu-item, .azy-chip, .azy-card).is-selected,
+:is(.azy-btn, .azy-menu-item, .azy-chip, .azy-card)[aria-selected="true"],
+:is(.azy-btn, .azy-chip)[aria-pressed="true"] {
+  background: var(--azy-selected-bg); border-color: var(--azy-selected-edge); color: var(--azy-accent-hover);
+  box-shadow: var(--azy-highlight), inset 0 0 0 1px rgba(var(--hue-rgb), 0.12), var(--azy-glow-soft);
+}
+:is(.azy-btn, .azy-input, .azy-menu-item, .azy-chip):is(:disabled, [aria-disabled="true"]) { opacity: var(--azy-disabled-alpha); cursor: default; box-shadow: none; }
+.azy-btn--primary { color: var(--azy-text-inv); background: linear-gradient(140deg, var(--azy-accent), var(--azy-accent-active)); border-color: transparent; box-shadow: var(--azy-highlight), var(--azy-glow-soft); }
+.azy-btn--primary:hover:not(:disabled) { background: linear-gradient(140deg, var(--azy-accent-hover), var(--azy-accent)); border-color: transparent; }
+.azy-btn--ghost { background: transparent; border-color: transparent; box-shadow: none; }
+.azy-btn--danger { color: var(--azy-err); border-color: color-mix(in srgb, var(--azy-err) 40%, transparent); }
+.azy-btn.is-success, .azy-chip.is-success { border-color: color-mix(in srgb, var(--azy-ok) 55%, transparent); box-shadow: var(--azy-highlight), 0 0 calc(14px * var(--azy-glow-k)) -6px var(--azy-ok); }
+.azy-btn.is-error, .azy-chip.is-error { border-color: color-mix(in srgb, var(--azy-err) 60%, transparent); }
+
+/* Shared utility states from design-tokens.css, re-tuned to the foundation. */
+.is-selected { border-color: var(--azy-selected-edge); box-shadow: var(--azy-glow-soft); }
+.is-done { box-shadow: 0 0 0 1px color-mix(in srgb, var(--azy-ok) 50%, transparent), 0 0 calc(14px * var(--azy-glow-k)) -6px var(--azy-ok); }
+
+/* ---------------------------------------------------------------------
+   5. DIALOGS — one glass dialog for confirm / apply / settings / error / shortcut / import
+   open/close ≈ 160 ms: opacity + tiny scale + small rise
+   --------------------------------------------------------------------- */
+.azy-overlay {
+  position: fixed; inset: 0; z-index: 900;
+  display: grid; place-items: center; padding: var(--azy-sp-4);
+  background: var(--azy-overlay);
+  animation: azyFade var(--azy-fx-pop) var(--azy-ease-out) both;
+}
+.azy-overlay.is-closing { animation: azyFadeOut var(--azy-fx-fast) var(--azy-ease) both; }
+.azy-dialog {
+  position: relative; overflow: hidden;
+  width: min(420px, 100%); max-height: calc(100vh - 32px);
+  display: flex; flex-direction: column;
+  color: var(--azy-text-1);
+  background: var(--azy-glass-tint), var(--azy-glass-strong);
+  backdrop-filter: var(--azy-glass-filter-strong); -webkit-backdrop-filter: var(--azy-glass-filter-strong);
+  border: 1px solid var(--azy-border-accent-soft); border-radius: var(--azy-r-xl);
+  box-shadow: var(--azy-highlight), var(--azy-shadow-3), var(--azy-glow-soft);
+  animation: azyDialogIn var(--azy-fx-pop) var(--azy-ease-out) both;
+}
+.azy-overlay.is-closing .azy-dialog { animation: azyDialogOut var(--azy-fx-fast) var(--azy-ease) both; }
+.azy-dialog::before { /* corner web, decoration level */
+  content: ''; position: absolute; top: 0; right: 0; width: 140px; height: 140px; pointer-events: none;
+  -webkit-mask: var(--azy-web-mask-corner-tr) top right / contain no-repeat; mask: var(--azy-web-mask-corner-tr) top right / contain no-repeat;
+  background: rgba(var(--azy-web-rgb), calc(var(--azy-web-a-deco) * var(--azy-deco-k)));
+}
+.azy-dialog--error { border-color: color-mix(in srgb, var(--azy-err) 45%, transparent); }
+.azy-dialog--error::before { background: color-mix(in srgb, var(--azy-err) calc(var(--azy-web-a-deco) * var(--azy-deco-k) * 100%), transparent); }
+.azy-dialog-head { display: flex; align-items: center; gap: 10px; padding: 14px 16px 6px; }
+.azy-dialog-head .azy-sigil { width: 22px; height: 22px; flex: none; }
+.azy-dialog-title { margin: 0; font: var(--azy-type-section); letter-spacing: 0.01em; }
+.azy-dialog-body { padding: 4px 16px 12px; font: var(--azy-type-body); color: var(--azy-text-2); overflow: auto; }
+.azy-dialog-foot { display: flex; justify-content: flex-end; gap: 8px; padding: 10px 16px 14px; border-top: 1px solid var(--azy-border-hair); }
+@keyframes azyFade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes azyFadeOut { from { opacity: 1; } to { opacity: 0; } }
+@keyframes azyDialogIn { from { opacity: 0; transform: translateY(calc(6px * var(--azy-motion-amp))) scale(calc(1 - 0.025 * var(--azy-motion-amp))); } to { opacity: 1; transform: none; } }
+@keyframes azyDialogOut { from { opacity: 1; transform: none; } to { opacity: 0; transform: translateY(calc(3px * var(--azy-motion-amp))) scale(calc(1 - 0.015 * var(--azy-motion-amp))); } }
+
+/* ---------------------------------------------------------------------
+   6. TOOLTIPS + MENUS (context, dropdown, select, command)
+   --------------------------------------------------------------------- */
+.azy-tooltip {
+  position: fixed; z-index: 1000; left: 0; top: 0; max-width: 260px;
+  padding: 5px 9px; pointer-events: none;
+  font: var(--azy-fw-reg) var(--azy-fs-tooltip)/1.4 var(--azy-font); color: var(--azy-text-1);
+  background: var(--azy-glass-strong);
+  backdrop-filter: var(--azy-glass-filter); -webkit-backdrop-filter: var(--azy-glass-filter);
+  border: 1px solid var(--azy-border-strong); border-radius: var(--azy-r-xs);
+  box-shadow: var(--azy-highlight), var(--azy-shadow-2);
+  opacity: 0; transform: translateY(calc(2px * var(--azy-motion-amp)));
+  transition: opacity var(--azy-fx-fast) var(--azy-ease), transform var(--azy-fx-fast) var(--azy-ease);
+}
+.azy-tooltip.is-on { opacity: 1; transform: none; }
+.azy-tooltip kbd { font: var(--azy-type-meta); padding: 0 4px; margin-left: 6px; border: 1px solid var(--azy-border); border-radius: 4px; color: var(--azy-text-2); }
+
+.azy-menu {
+  position: fixed; z-index: 950; min-width: 170px; max-width: 300px; padding: 4px;
+  background: var(--azy-glass-tint), var(--azy-glass-strong);
+  backdrop-filter: var(--azy-glass-filter-strong); -webkit-backdrop-filter: var(--azy-glass-filter-strong);
+  border: 1px solid var(--azy-border-accent-soft); border-radius: var(--azy-r-md);
+  box-shadow: var(--azy-highlight), var(--azy-shadow-3);
+  animation: azyMenuIn var(--azy-fx-fast) var(--azy-ease-out) both;
+}
+.azy-menu-item {
+  display: flex; align-items: center; gap: 8px; width: 100%; min-height: 26px; padding: 0 9px;
+  text-align: left; background: transparent; border-color: transparent; box-shadow: none; cursor: pointer;
+}
+.azy-menu-item .azy-menu-kbd { margin-left: auto; font: var(--azy-type-meta); color: var(--azy-text-3); }
+.azy-menu-item:focus-visible, .azy-menu-item.is-active { background: var(--azy-selected-bg); border-color: var(--azy-border-accent-soft); }
+.azy-menu-item--danger { color: var(--azy-err); }
+.azy-menu-sep { height: 1px; margin: 4px 6px; background: var(--azy-border-hair); }
+.azy-menu-label { padding: 6px 9px 3px; font: var(--azy-type-caption); letter-spacing: var(--azy-tracking-caps); text-transform: uppercase; color: var(--azy-text-3); }
+@keyframes azyMenuIn { from { opacity: 0; transform: translateY(calc(-3px * var(--azy-motion-amp))) scale(calc(1 - 0.02 * var(--azy-motion-amp))); } to { opacity: 1; transform: none; } }
+/* Native selects/dropdown lists follow the same dark glass palette where the OS allows. */
+html[data-theme] select option { background: var(--azy-depth-2); color: var(--azy-text-1); }
+
+/* ---------------------------------------------------------------------
+   7. TYPOGRAPHY + ICONS
+   --------------------------------------------------------------------- */
+.azy-t-page { font: var(--azy-type-page); color: var(--azy-text-1); letter-spacing: -0.005em; }
+.azy-t-section { font: var(--azy-type-section); color: var(--azy-text-1); }
+.azy-t-control { font: var(--azy-type-control); color: var(--azy-text-1); }
+.azy-t-body { font: var(--azy-type-body); color: var(--azy-text-2); }
+.azy-t-secondary { font: var(--azy-type-secondary); color: var(--azy-text-2); }
+.azy-t-caption { font: var(--azy-type-caption); color: var(--azy-text-3); letter-spacing: var(--azy-tracking-caps); text-transform: uppercase; }
+.azy-t-meta { font: var(--azy-type-meta); color: var(--azy-text-3); font-variant-numeric: tabular-nums; }
+
+.azy-icon { width: var(--azy-icon-sm); height: var(--azy-icon-sm); flex: none; color: currentColor; fill: none; stroke: currentColor; stroke-width: var(--azy-icon-stroke); stroke-linecap: round; stroke-linejoin: round; transition: color var(--azy-fx-fast) var(--azy-ease); }
+.azy-icon--xs { width: var(--azy-icon-xs); height: var(--azy-icon-xs); }
+.azy-icon--md { width: var(--azy-icon-md); height: var(--azy-icon-md); }
+.azy-icon--lg { width: var(--azy-icon-lg); height: var(--azy-icon-lg); }
+:is(.azy-btn, .azy-menu-item):hover .azy-icon { color: var(--azy-accent-hover); }
+:is(.azy-btn, .azy-menu-item).is-selected .azy-icon { color: var(--azy-accent); }
+
+/* ---------------------------------------------------------------------
+   8. WEB VISUAL SYSTEM — static decoration (visibility ladder)
+   --------------------------------------------------------------------- */
+.azy-web { position: absolute; display: block; pointer-events: none; color: rgb(var(--azy-web-rgb)); opacity: calc(var(--azy-web-a-deco) * var(--azy-deco-k)); contain: strict; }
+.azy-web[data-level="bg"] { opacity: calc(var(--azy-web-a-bg) * var(--azy-deco-k)); }
+.azy-web[data-level="live"] { opacity: var(--azy-web-a-live); }
+.azy-web-svg { display: block; width: 100%; height: 100%; overflow: visible; fill: none; stroke: currentColor; stroke-width: var(--azy-web-stroke); stroke-linecap: round; }
+.azy-web-svg path { vector-effect: non-scaling-stroke; }
+.azy-web-node { fill: currentColor; stroke: none; }
+/* Mask utilities (zero DOM): any element can wear a web. */
+.azy-web-corner,
+.azy-web-edge,
+.azy-web-radial {
+  -webkit-mask-repeat: no-repeat; mask-repeat: no-repeat;
+  background: rgba(var(--azy-web-rgb), calc(var(--azy-web-a-deco) * var(--azy-deco-k)));
+  pointer-events: none;
+}
+.azy-web-corner { -webkit-mask-image: var(--azy-web-mask-corner-tr); mask-image: var(--azy-web-mask-corner-tr); -webkit-mask-position: top right; mask-position: top right; -webkit-mask-size: contain; mask-size: contain; }
+.azy-web-edge { -webkit-mask-image: var(--azy-web-mask-edge-bottom); mask-image: var(--azy-web-mask-edge-bottom); -webkit-mask-size: 100% 100%; mask-size: 100% 100%; }
+.azy-web-radial { -webkit-mask-image: var(--azy-web-mask-radial); mask-image: var(--azy-web-mask-radial); -webkit-mask-size: contain; mask-size: contain; -webkit-mask-position: center; mask-position: center; }
+html[data-webs="off"] :is(.azy-web, .azy-web-corner, .azy-web-edge, .azy-web-radial) { display: none; }
+
+/* Empty states: a partial web behind the orb (decoration level). */
+html[data-webs="on"] .empty-state::before {
+  content: ''; position: absolute; left: 50%; top: 50%; width: 220px; height: 220px; margin: -130px 0 0 -110px;
+  pointer-events: none; z-index: 0;
+  -webkit-mask: var(--azy-web-mask-partial) center / contain no-repeat; mask: var(--azy-web-mask-partial) center / contain no-repeat;
+  background: rgba(var(--azy-web-rgb), calc(var(--azy-web-a-deco) * var(--azy-deco-k)));
+}
+html[data-webs="on"] .empty-state > * { position: relative; z-index: 1; }
+
+/* ---------------------------------------------------------------------
+   9. WEB ANIMATIONS — event-driven, 80-320 ms, one shared fixed layer
+   --------------------------------------------------------------------- */
+.azy-fx-layer { position: fixed; inset: 0; z-index: 1100; pointer-events: none; overflow: hidden; contain: strict; }
+.azy-fx { position: fixed; display: block; pointer-events: none; color: rgb(var(--azy-web-rgb)); contain: layout paint; will-change: transform, opacity; }
+.azy-fx--ok { color: var(--azy-ok); }
+.azy-fx--err { color: var(--azy-err); }
+.azy-fx-svg { display: block; width: 100%; height: 100%; overflow: visible; fill: none; stroke: currentColor; stroke-width: 1px; stroke-linecap: round; }
+.azy-fx-svg path { vector-effect: non-scaling-stroke; }
+.azy-fx-svg .azy-web-node { fill: currentColor; stroke: none; }
+
+.azy-fx--draw { animation: azyWebFade calc(320ms * var(--azy-speed-k, 1)) var(--azy-ease-out) both; opacity: var(--azy-web-a-fx); }
+.azy-fx--draw path { stroke-dasharray: 1; stroke-dashoffset: 1; animation: azyWebDraw calc(300ms * var(--azy-speed-k, 1)) var(--azy-ease-out) forwards; animation-delay: calc(var(--i, 0) * 22ms); }
+.azy-fx--pulse { animation: azyWebPulse calc(260ms * var(--azy-speed-k, 1)) var(--azy-ease-out) both; }
+.azy-fx--ripple { animation: azyWebRipple calc(300ms * var(--azy-speed-k, 1)) var(--azy-ease-out) both; }
+.azy-fx--ripple .azy-web-ring { animation: azyWebRing calc(300ms * var(--azy-speed-k, 1)) var(--azy-ease-out) both; animation-delay: calc(var(--i, 0) * 18ms); }
+.azy-fx--snap { animation: azyWebSnap calc(160ms * var(--azy-speed-k, 1)) var(--azy-ease-out) both; }
+.azy-fx--sweep { animation: azyWebSweep calc(280ms * var(--azy-speed-k, 1)) var(--azy-ease-out) both; }
+.azy-fx--connect { animation: azyWebFade calc(300ms * var(--azy-speed-k, 1)) var(--azy-ease-out) both; opacity: var(--azy-web-a-live); }
+.azy-fx--connect path { stroke-dasharray: 1; stroke-dashoffset: 1; animation: azyWebDraw calc(260ms * var(--azy-speed-k, 1)) var(--azy-ease-out) forwards; }
+.azy-fx--connect .azy-web-node { animation: azyWebNode calc(300ms * var(--azy-speed-k, 1)) var(--azy-ease-out) both; }
+.azy-fx--dissolve { animation: azyWebDissolve calc(240ms * var(--azy-speed-k, 1)) var(--azy-ease) both; }
+.azy-fx--break { animation: azyWebBreak calc(220ms * var(--azy-speed-k, 1)) var(--azy-ease) both; }
+.azy-fx--break .azy-web-ring:nth-child(odd) { animation: azyWebShard calc(220ms * var(--azy-speed-k, 1)) var(--azy-ease) both; }
+/* Reduced motion / performance: functional feedback survives as a plain fade, no movement. */
+.azy-fx--static,
+.azy-fx--static * { animation: azyWebFlash calc(180ms * var(--azy-speed-k, 1)) linear both !important; transform: none !important; stroke-dashoffset: 0 !important; }
+
+@keyframes azyWebDraw { to { stroke-dashoffset: 0; } }
+@keyframes azyWebFade { 0% { opacity: 0; } 25% { opacity: var(--azy-web-a-fx); } 100% { opacity: 0; } }
+@keyframes azyWebPulse { 0% { opacity: 0; transform: scale(0.72); } 35% { opacity: var(--azy-web-a-fx); } 100% { opacity: 0; transform: scale(1.12); } }
+@keyframes azyWebRipple { 0% { opacity: var(--azy-web-a-fx); transform: scale(0.35); } 100% { opacity: 0; transform: scale(1.18); } }
+@keyframes azyWebRing { from { opacity: 0; } 40% { opacity: 1; } to { opacity: 0.2; } }
+@keyframes azyWebSnap { 0% { opacity: var(--azy-web-a-fx); transform: scale(1.14); } 100% { opacity: 0; transform: scale(1); } }
+@keyframes azyWebSweep { 0% { opacity: 0; transform: translateX(-30%) scaleX(0.6); } 40% { opacity: var(--azy-web-a-live); } 100% { opacity: 0; transform: translateX(30%) scaleX(1); } }
+@keyframes azyWebNode { 0% { opacity: 0; transform: scale(0); } 60% { opacity: 1; } 100% { opacity: 0.6; transform: scale(1); } }
+@keyframes azyWebDissolve { 0% { opacity: var(--azy-web-a-live); transform: scale(1); } 100% { opacity: 0; transform: scale(1.08); } }
+@keyframes azyWebBreak { 0% { opacity: var(--azy-web-a-fx); transform: scale(1) rotate(0); } 100% { opacity: 0; transform: scale(0.9) rotate(-6deg); } }
+@keyframes azyWebShard { to { transform: translateY(6px); opacity: 0; } }
+@keyframes azyWebFlash { 0% { opacity: 0; } 30% { opacity: var(--azy-web-a-live); } 100% { opacity: 0; } }
+.azy-fx--ripple, .azy-fx--pulse, .azy-fx--snap, .azy-fx--dissolve, .azy-fx--break, .azy-fx--sweep { transform-origin: center; }
+
+/* ---------------------------------------------------------------------
+   10. AZY SIGIL — original spider mark, six states
+   --------------------------------------------------------------------- */
+.azy-sigil { display: inline-block; width: 28px; height: 28px; overflow: visible; color: var(--azy-accent); vertical-align: middle; }
+.azy-sigil * { transform-box: view-box; transform-origin: 32px 32px; }
+.azy-sigil-web { fill: none; stroke: currentColor; stroke-width: 0.7; opacity: 0.5; stroke-dasharray: 1; stroke-dashoffset: 0; }
+.azy-sigil-web--inner { opacity: 0.22; }
+.azy-sigil-leg { fill: none; stroke: currentColor; stroke-width: 1.35; stroke-linecap: round; stroke-linejoin: round; }
+.azy-sigil-head,
+.azy-sigil-abdomen { fill: rgba(var(--hue-rgb), 0.14); stroke: currentColor; stroke-width: 1.25; stroke-linejoin: round; }
+.azy-sigil-a { fill: none; stroke: var(--azy-accent-hover); stroke-width: 1.15; stroke-linecap: round; stroke-linejoin: round; }
+.azy-sigil-core { fill: var(--azy-accent-hover); opacity: 0.9; }
+
+.azy-sigil.is-appear .azy-sigil-web { animation: azySigilDraw calc(320ms * var(--azy-speed-k, 1)) var(--azy-ease-out) both; }
+.azy-sigil.is-appear .azy-sigil-legs { animation: azySigilUnfold calc(280ms * var(--azy-speed-k, 1)) var(--azy-ease-out) both; }
+.azy-sigil.is-appear .azy-sigil-body { animation: azyFade calc(180ms * var(--azy-speed-k, 1)) var(--azy-ease-out) both; }
+.azy-sigil.is-active .azy-sigil-legs { animation: azySigilFlex calc(220ms * var(--azy-speed-k, 1)) var(--azy-ease-out) both; }
+.azy-sigil.is-active .azy-sigil-web { animation: azySigilFlash calc(240ms * var(--azy-speed-k, 1)) var(--azy-ease-out) both; }
+.azy-sigil.is-success .azy-sigil-web { animation: azySigilPulse calc(300ms * var(--azy-speed-k, 1)) var(--azy-ease-out) both; }
+.azy-sigil.is-success .azy-sigil-core { animation: azySigilCore calc(300ms * var(--azy-speed-k, 1)) var(--azy-ease-out) both; }
+.azy-sigil.is-loading .azy-sigil-web { stroke-dasharray: 0.12 0.06; animation: azySigilSpin calc(900ms * var(--azy-speed-k, 1)) linear infinite; }
+.azy-sigil.is-loading .azy-sigil-core { animation: azySigilBreath calc(900ms * var(--azy-speed-k, 1)) ease-in-out infinite; }
+.azy-sigil.is-dissolve { animation: azySigilOut calc(240ms * var(--azy-speed-k, 1)) var(--azy-ease) both; }
+.azy-sigil.is-dissolve .azy-sigil-web { animation: azySigilUndraw calc(240ms * var(--azy-speed-k, 1)) var(--azy-ease) both; }
+@keyframes azySigilDraw { from { stroke-dashoffset: 1; } to { stroke-dashoffset: 0; } }
+@keyframes azySigilUndraw { from { stroke-dashoffset: 0; } to { stroke-dashoffset: -1; } }
+@keyframes azySigilUnfold { from { opacity: 0; transform: scale(calc(1 - 0.35 * var(--azy-motion-amp))); } to { opacity: 1; transform: none; } }
+@keyframes azySigilFlex { 50% { transform: scale(calc(1 + 0.07 * var(--azy-motion-amp))); } }
+@keyframes azySigilFlash { 40% { opacity: 1; } }
+@keyframes azySigilPulse { 0% { opacity: 1; transform: scale(0.9); } 100% { opacity: 0.5; transform: scale(1); } }
+@keyframes azySigilCore { 40% { transform: scale(2.2); opacity: 1; } }
+@keyframes azySigilSpin { to { stroke-dashoffset: -1; } }
+@keyframes azySigilBreath { 50% { opacity: 0.35; } }
+@keyframes azySigilOut { to { opacity: 0; transform: scale(calc(1 - 0.12 * var(--azy-motion-amp))); } }
+
+/* ---------------------------------------------------------------------
+   11. FEEDBACK — loading (web pulse), success (ripple), error (glass notice)
+   --------------------------------------------------------------------- */
+.azy-spinner {
+  display: inline-block; width: 14px; height: 14px; flex: none; vertical-align: middle;
+  -webkit-mask: var(--azy-web-mask-radial) center / contain no-repeat; mask: var(--azy-web-mask-radial) center / contain no-repeat;
+  background: var(--azy-accent);
+  animation: azyWebSpin calc(1.1s * var(--azy-speed-k, 1)) linear infinite, azySpinPulse calc(1.1s * var(--azy-speed-k, 1)) ease-in-out infinite;
+}
+.azy-spinner--lg { width: 22px; height: 22px; }
+@keyframes azyWebSpin { to { transform: rotate(360deg); } }
+@keyframes azySpinPulse { 50% { opacity: 0.45; } }
+/* The shared .is-loading busy mark becomes a tiny spinning web (only while loading). */
+.is-loading::after {
+  border: 0; border-radius: 0;
+  -webkit-mask: var(--azy-web-mask-radial) center / contain no-repeat; mask: var(--azy-web-mask-radial) center / contain no-repeat;
+  background: var(--azy-accent);
+  animation: azyWebSpin calc(1.1s * var(--azy-speed-k, 1)) linear infinite;
+}
+.azy-progress { position: relative; height: 2px; overflow: hidden; border-radius: 2px; background: var(--azy-border-hair); }
+.azy-progress > i { position: absolute; inset: 0 auto 0 0; width: var(--p, 0%); background: linear-gradient(90deg, var(--azy-accent-active), var(--azy-accent)); box-shadow: var(--azy-glow-soft); transition: width var(--azy-fx) var(--azy-ease); }
+.azy-progress.is-indeterminate > i { width: 30%; animation: azyProgress calc(1s * var(--azy-speed-k, 1)) var(--azy-ease) infinite; }
+@keyframes azyProgress { from { transform: translateX(-100%); } to { transform: translateX(340%); } }
+
+/* ---------------------------------------------------------------------
+   12. CHARACTER LAYER — independent, disableable, never above popups or controls
+   --------------------------------------------------------------------- */
+.azy-character-layer { position: fixed; inset: 0; z-index: 40; pointer-events: none; overflow: hidden; contain: strict; }
+html:not([data-characters="on"]) .azy-character-layer { display: none; }
+.azy-character { position: absolute; width: 34px; height: 34px; pointer-events: none; color: var(--azy-accent); opacity: 0.9; will-change: transform, opacity; }
+.azy-character .azy-sigil { width: 100%; height: 100%; }
+.azy-character--mini { width: 22px; height: 22px; }
+.azy-character--mini .azy-character-thread { height: 26px; }
+.azy-character-thread { position: absolute; left: 50%; bottom: 60%; width: 1px; height: 48px; background: linear-gradient(to top, rgba(var(--hue-rgb), 0.5), transparent); transform-origin: bottom; }
+.azy-character[data-state="enter"]  { animation: azyChEnter calc(420ms * var(--azy-speed-k, 1)) var(--azy-ease-out) both; }
+.azy-character[data-state="exit"]   { animation: azyChExit calc(300ms * var(--azy-speed-k, 1)) var(--azy-ease) both; }
+.azy-character[data-state="land"]   { animation: azyChLand calc(240ms * var(--azy-speed-k, 1)) var(--azy-ease-out) both; }
+.azy-character[data-state="look"]   { animation: azyChLook calc(520ms * var(--azy-speed-k, 1)) var(--azy-ease) both; }
+.azy-character[data-state="idle"]   { animation: azyChIdle calc(1.6s * var(--azy-speed-k, 1)) ease-in-out 2; }
+.azy-character[data-state="loading"] .azy-sigil-web { stroke-dasharray: 0.12 0.06; animation: azySigilSpin calc(900ms * var(--azy-speed-k, 1)) linear infinite; }
+.azy-character[data-state="success"] { animation: azyChHop calc(320ms * var(--azy-speed-k, 1)) var(--azy-ease-out) both; }
+.azy-character[data-state="error"]  { animation: azyChShake calc(260ms * var(--azy-speed-k, 1)) var(--azy-ease) both; }
+.azy-character[data-state="swing"]  { transform-origin: 50% -300%; animation: azyChSwing calc(900ms * var(--azy-speed-k, 1)) var(--azy-ease) both; }
+.azy-character[data-state="zip"]    { animation: azyChZip calc(260ms * var(--azy-speed-k, 1)) var(--azy-ease) both; }
+.azy-character[data-state="crawl"]  { animation: azyChCrawl calc(1.4s * var(--azy-speed-k, 1)) linear both; }
+.azy-character:not([data-state="enter"]):not([data-state="swing"]) .azy-character-thread { opacity: 0.6; }
+@keyframes azyChEnter { from { opacity: 0; transform: translateY(-140px); } 70% { opacity: 1; transform: translateY(6px); } to { transform: none; } }
+@keyframes azyChExit { to { opacity: 0; transform: translateY(-160px); } }
+@keyframes azyChLand { 40% { transform: scale(1.08, 0.9); } }
+@keyframes azyChLook { 30% { transform: rotate(-10deg); } 70% { transform: rotate(8deg); } }
+@keyframes azyChIdle { 50% { transform: translateY(-2px); } }
+@keyframes azyChHop { 40% { transform: translateY(-8px); } }
+@keyframes azyChShake { 25% { transform: translateX(-3px); } 75% { transform: translateX(3px); } }
+@keyframes azyChSwing { 0% { transform: rotate(-24deg); } 50% { transform: rotate(18deg); } 100% { transform: rotate(0); } }
+@keyframes azyChZip { from { transform: translateX(-120px); opacity: 0; } to { transform: none; opacity: 1; } }
+@keyframes azyChCrawl { from { transform: translateX(0); } to { transform: translateX(var(--crawl, 120px)); } }
+
+/* ---------------------------------------------------------------------
+   13. RESPONSIVE — same identity, adapted density
+   --------------------------------------------------------------------- */
+@media (max-width: 720px) {
+  html[data-theme] .minimal-ui #app {
+    background:
+      var(--azy-web-bg-corner, none) top right / min(52vw, 260px) auto no-repeat,
+      radial-gradient(ellipse at 100% 0, rgba(var(--hue-rgb), calc(0.06 * var(--azy-glow-k))), transparent 52%),
+      linear-gradient(162deg, var(--azy-depth-2t) 0%, var(--azy-depth-1) 48%, var(--azy-depth-0) 100%);
+  }
+  .azy-dialog::before { width: 100px; height: 100px; }
+}
+@media (max-width: 460px) {
+  html[data-webs="on"] .empty-state::before { width: 160px; height: 160px; margin: -100px 0 0 -80px; }
+  .azy-dialog-head { padding: 12px 12px 4px; }
+  .azy-dialog-body { padding: 4px 12px 10px; }
+  .azy-dialog-foot { padding: 8px 12px 12px; }
+  .azy-character-layer { display: none; }
+}
+
+/* Living-web keyframes (used by the glow style layer, azy-skin.css). */
+@keyframes azyWebDrift {
+  0%   { transform: translate3d(0, 0, 0) scale(1); opacity: 0.8; }
+  50%  { transform: translate3d(-0.5%, 0.4%, 0) scale(1.012); opacity: 1; }
+  100% { transform: translate3d(0.4%, -0.3%, 0) scale(1.018); opacity: 0.86; }
+}
+@keyframes azyWebShimmer {
+  0%, 100% { transform: scale(1.03) rotate(0.4deg); opacity: 0; }
+  45%      { transform: scale(1.022) rotate(0.1deg); opacity: 0.45; }
+  70%      { transform: scale(1.016) rotate(-0.2deg); opacity: 0; }
+}
+
+/* Preview panel + media box follow the theme colour (v1.15): the panel is a depth glass tinted
+   by the accent, and the box behind a playing video / image is a deeper accent tint instead of
+   flat black, so letterboxing and transparent images sit on the theme. */
+html[data-theme] .preview-panel {
+  background: radial-gradient(ellipse at 20% 0%, rgba(var(--hue-rgb), 0.12), transparent 60%),
+    color-mix(in srgb, color-mix(in srgb, rgb(var(--hue-rgb)) 9%, var(--azy-depth-0)) 86%, transparent);
+}
+html[data-theme] :is(.preview-media, .preview-media-inner, .audio-stage) {
+  background: color-mix(in srgb, rgb(var(--hue-rgb)) 13%, var(--azy-depth-0));
+  border-color: rgba(var(--hue-rgb), 0.3);
+}
+html[data-theme] .preview-panel .preview-sheet { background: transparent; }
+html[data-theme] body #app :is(#fileGrid, #sfxGrid) .file-card:not(.file-card--folder) .thumb {
+  /* Flat on purpose: 400 thumbnails with a gradient each cost real raster time on every scroll. */
+  background: color-mix(in srgb, rgb(var(--hue-rgb)) 11%, var(--azy-depth-0));
+}

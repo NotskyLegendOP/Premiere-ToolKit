@@ -1,0 +1,235 @@
+/* =========================================================================
+   azy-custom.css — Settings → Customise (v1.16)
+   The dials are CSS custom properties painted on <html> by azy-theme-engine.js:
+     --azy-glow-user  glow strength ×        (design-tokens: --azy-glow-k)
+     --azy-web-user   web opacity ×          (design-tokens: --azy-deco-k, azy-web.js bake)
+     --azy-round      corner roundness ×     (design-tokens --azy-r-*, skin --sk-r*)
+     --azy-glass-k    panel translucency ×   (skin --sk-fill*, #app below)
+     --azy-speed-k    animation duration ×   (design-tokens --azy-dur-*, --azy-motion-k, literals)
+   data-web-density   light · normal · dense (azy-web.js frame)
+   Text & UI size is the window zoom (main.js applyUiScale), not CSS.
+   Loaded after azy-motion.css. No hex colours; tokens only.
+   ========================================================================= */
+
+/* No corner glow spots (v1.16 request). The ambient light pools of #app::before sat in the
+   top-left / bottom-right corners; the hub glows of the living web were removed in azy-motion.
+   Edge glows, web threads, dew, glints and button / card glows are unchanged. */
+html[data-skin="glow"] #app::before { content: none; animation: none; }
+
+/* Panel translucency: the workspace tint lets the web frame show through more or less.
+   30 (the stock value) = the 30 % tint the skin always had. */
+html[data-skin="glow"] .minimal-ui #app {
+  background: color-mix(in srgb, var(--azy-depth-0) clamp(0%, calc(100% - 70% * var(--azy-glass-k, 1)), 100%), transparent);
+}
+
+/* Living web follows the web layer switch and the web opacity dial. Before v1.16 its dew, spider
+   and glints kept floating after "Web layer" was switched off. */
+html[data-webs="off"] .azy-web-life { display: none !important; }
+.azy-web-life { opacity: min(1, var(--azy-web-user, 1)); }
+
+/* ---- Settings → Customise rows ---- */
+.azy-cz-out {
+  margin-left: 6px; padding: 1px 7px; border-radius: var(--azy-r-xs);
+  font: 600 11px/1.5 var(--azy-font-mono, ui-monospace, monospace); font-variant-numeric: tabular-nums;
+  color: var(--hue); background: rgba(var(--hue-rgb), 0.1); box-shadow: inset 0 0 0 1px rgba(var(--hue-rgb), 0.22);
+}
+.azy-cz-row .azy-cz-range { width: min(220px, 40%); accent-color: var(--hue); cursor: pointer; }
+.azy-cz-swatches { display: flex; flex-wrap: wrap; gap: 6px; justify-content: flex-end; max-width: 300px; }
+.azy-cz-swatch {
+  display: grid; place-items: center; width: 26px; height: 26px; padding: 0; border-radius: 50%;
+  border: 1px solid var(--azy-line, rgba(255, 255, 255, 0.1)); background: transparent; cursor: pointer;
+  transition: transform var(--azy-dur-1) var(--azy-ease), box-shadow var(--azy-dur-2) var(--azy-ease), border-color var(--azy-dur-2) var(--azy-ease);
+}
+.azy-cz-swatch .theme-sw { margin: 0; width: 14px; height: 14px; }
+.azy-cz-swatch:hover { transform: translateY(-1px) scale(1.06); }
+.azy-cz-swatch.active { border-color: var(--hue); box-shadow: 0 0 0 2px rgba(var(--hue-rgb), 0.25), 0 0 calc(12px * var(--azy-glow-k, 1)) rgba(var(--hue-rgb), 0.45); }
+.azy-cz-reset { white-space: nowrap; }
+
+/* ---- Azy Speed: minimised to its progress pill while Regenerate runs (speed-renderer compact()) ---- */
+body.speed-body.speed-compact #speed,
+body.speed-body.speed-compact #toastWrap { display: none; }
+html body.speed-body.speed-compact .azy-wait { top: 8px; right: 8px; width: calc(100vw - 16px); max-width: none; }
+body.speed-body.speed-compact .azy-wait-top,
+body.speed-body.speed-compact .azy-wait-min2 { display: none; }
+
+
+/* ---- v1.18: Apply — bottom-right of every media card; text when roomy, icon when narrow ----------
+   The card is a size container, so the switch follows the card's own width (window size, grid
+   density, list/grid view) — never a guess from the viewport. Same 26-28px hit area in both modes.
+   The caption reserves the button's width, so names/metadata truncate instead of sliding under it. */
+.file-card.has-apply, .sound-card { container: azycard / inline-size; }
+.azy-apply {
+  position: absolute; right: 8px; bottom: 8px; z-index: 3;
+  display: inline-flex; align-items: center; justify-content: center; gap: 5px;
+  height: 26px; min-width: 28px; padding: 0 10px 0 8px; border-radius: 8px;
+  font-family: inherit; font-size: 11.5px; font-weight: 650; line-height: 1; letter-spacing: .01em; white-space: nowrap;
+  color: var(--azy-text-1, var(--text));
+  background-color: rgba(var(--hue-rgb), .10);
+  border: 1px solid rgba(var(--hue-rgb), .38);
+  cursor: pointer; user-select: none; -webkit-user-drag: none;
+  transition: background-color calc(120ms * var(--azy-speed-k, 1)) ease, border-color calc(120ms * var(--azy-speed-k, 1)) ease, box-shadow calc(120ms * var(--azy-speed-k, 1)) ease, scale calc(90ms * var(--azy-speed-k, 1)) ease, opacity calc(120ms * var(--azy-speed-k, 1)) ease;
+}
+.azy-apply .azy-apply-ic { flex: none; display: block; }
+.azy-apply:hover:not(:disabled) { background-color: rgba(var(--hue-rgb), .24); border-color: rgba(var(--hue-rgb), .8); box-shadow: 0 0 calc(12px * var(--azy-glow-k, 1)) calc(-3px * var(--azy-glow-k, 1)) rgba(var(--azy-glow-rgb-user, var(--hue-rgb)), calc(.55 * var(--azy-glow-k, 1))); }
+.azy-apply:focus-visible { outline: 2px solid rgba(var(--hue-rgb), .85); outline-offset: 2px; }
+.azy-apply:active:not(:disabled) { scale: .96; }
+.azy-apply:disabled { cursor: progress; opacity: .75; }
+.azy-apply.busy .azy-apply-ic, .azy-apply.is-done .azy-apply-ic { display: none; }
+.azy-apply.busy::before { content: ''; width: 11px; height: 11px; flex: none; border-radius: 50%; border: 2px solid rgba(var(--hue-rgb), .3); border-top-color: var(--hue); animation: azyApplySpin calc(700ms * var(--azy-speed-k, 1)) linear infinite; }
+.azy-apply.is-done::before { content: '\2713'; font-size: 12px; font-weight: 700; color: var(--hue); }
+.azy-apply.is-done { border-color: rgba(var(--hue-rgb), .8); }
+.azy-apply.is-error { border-color: var(--azy-err, rgba(var(--hue-rgb), .9)); }
+@keyframes azyApplySpin { to { rotate: 360deg; } }
+html[data-motion="reduced"] .azy-apply.busy::before { animation: none; border-top-color: rgba(var(--hue-rgb), .3); border-right-color: var(--hue); }
+html[data-motion="reduced"] .azy-apply:active:not(:disabled) { scale: 1; }
+/* v1.19: media-card Apply is bigger (32px, roomier padding, larger label) — the label stays
+   whenever the card has room; icon-only only on genuinely narrow cards. */
+.file-card .azy-apply { height: 32px; min-width: 34px; padding: 0 14px 0 12px; gap: 6px; border-radius: 9px; font-size: 12.5px; right: 10px; bottom: 10px; }
+.file-card .azy-apply .azy-apply-ic { width: 14px; height: 14px; }
+/* reserve the corner so text never runs under the button */
+.file-card.has-apply :is(.media-caption, .file-name) { padding-right: 104px; box-sizing: border-box; max-width: 100%; }
+.file-card.has-apply .media-caption .file-name { padding-right: 0; }
+@container azycard (max-width: 280px) {
+  .file-card .azy-apply { width: 32px; height: 32px; min-width: 32px; padding: 0; }
+  .file-card .azy-apply .azy-apply-tx { display: none; }
+  .file-card.has-apply :is(.media-caption, .file-name) { padding-right: 44px; }
+  .file-card.has-apply .media-caption .file-name { padding-right: 0; }
+}
+/* v1.19: Sounds keep their ORIGINAL Apply (visual restore of the pre-v1.18 look): a full-width text
+   button in the card's own flow under the name/chips. Behaviour is the shared one (instant at the
+   saved level, hold-modifier → level card, busy/done/error feedback). */
+.sound-card .azy-apply.sound-apply {
+  position: static; right: auto; bottom: auto; align-self: stretch; width: auto; height: auto; min-width: 0;
+  margin: 2px 0 0; padding: 6px 10px; border-radius: 10px; font-size: 11px; font-weight: 600; letter-spacing: 0;
+  background-color: rgba(var(--hue-rgb), .08); border: 1px solid rgba(var(--hue-rgb), .3);
+}
+.sound-card .azy-apply.sound-apply .azy-apply-ic { display: none; }
+.sound-card .azy-apply.sound-apply:hover:not(:disabled) { background-color: rgba(var(--hue-rgb), .18); }
+html[data-skin="glow"] .minimal-ui #app .sound-card .azy-apply.sound-apply { border-color: var(--sk-edge); background-image: var(--sk-lit-soft); box-shadow: none; }
+html[data-skin="glow"] .minimal-ui #app .sound-card .azy-apply.sound-apply:hover:not(:disabled) { border-color: var(--sk-edge-hi); background-image: var(--sk-lit); box-shadow: var(--sk-glow), var(--sk-inner-hi); }
+.sound-card .sound-sub { min-width: 0; }
+.azy-num { width: 76px; height: 28px; padding: 0 8px; border-radius: 8px; background: var(--azy-depth-2, rgba(255,255,255,.04)); color: var(--azy-text-1, var(--text)); border: 1px solid var(--azy-border-2, rgba(255,255,255,.12)); font: inherit; }
+.azy-num:focus-visible { outline: none; border-color: rgba(var(--hue-rgb), .7); }
+
+/* ---- v1.17: custom colour themes (Customise › Theme) — compact, inline, no extra window ---- */
+.theme-sw--custom { background: linear-gradient(135deg, var(--sw-a, #d6283f) 50%, var(--sw-b, #050506) 50%); }
+.azy-cz-swatches { max-width: 360px; }
+.azy-cz-swatch { display: inline-flex; align-items: center; width: auto; min-width: 26px; padding: 0 8px 0 5px; gap: 6px; border-radius: 99px; }
+.azy-cz-swatch em { font-style: normal; font-size: 11px; color: var(--azy-text-2, var(--dim)); max-width: 110px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.azy-cz-swatch.active em { color: var(--azy-text-1, var(--text)); }
+.azy-theme-actions { display: flex; flex-wrap: wrap; gap: 6px; justify-content: flex-end; margin: -2px 0 8px; }
+.azy-theme-actions .chip:disabled { opacity: var(--azy-disabled-alpha, 0.42); cursor: default; }
+.azy-theme-editor { margin: 0 0 12px; padding: 10px 12px 12px; border-radius: calc(12px * var(--azy-round, 1)); border: 1px solid var(--azy-border, rgba(255, 255, 255, 0.09)); background: var(--azy-depth-2, #0e0e11); }
+.azy-te-head { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+.azy-te-name { flex: 1; min-width: 0; height: 28px; padding: 0 9px; border-radius: 8px; font: inherit; font-size: 12.5px; font-weight: 600; color: var(--azy-text-1, var(--text)); background: var(--azy-depth-0, #050506); border: 1px solid var(--azy-border, rgba(255, 255, 255, 0.09)); }
+.azy-te-name:focus-visible { outline: none; border-color: rgba(var(--hue-rgb), 0.7); }
+.azy-te-state { font-size: 10.5px; color: var(--azy-text-3, var(--faint)); white-space: nowrap; }
+.azy-te-close { width: 24px; height: 24px; border-radius: 7px; border: 1px solid transparent; background: none; color: var(--azy-text-2, var(--dim)); font-size: 16px; line-height: 1; cursor: pointer; }
+.azy-te-close:hover { border-color: var(--azy-border, rgba(255, 255, 255, 0.09)); color: var(--azy-text-1, var(--text)); }
+.azy-te-seed { display: flex; align-items: center; gap: 10px; margin: 0 0 8px; padding: 7px 9px; border-radius: 10px; border: 1px solid rgba(var(--hue-rgb), .32); background: rgba(var(--hue-rgb), .06); cursor: pointer; }
+.azy-te-seed:hover { border-color: rgba(var(--hue-rgb), .6); }
+.azy-te-seed input[type="color"] { width: 38px; height: 30px; padding: 0; border: 0; border-radius: 8px; background: none; cursor: pointer; flex: none; }
+.azy-te-seed input[type="color"]::-webkit-color-swatch-wrapper { padding: 0; }
+.azy-te-seed input[type="color"]::-webkit-color-swatch { border: 1px solid rgba(255, 255, 255, 0.22); border-radius: 8px; }
+.azy-te-seed span { display: flex; flex-direction: column; gap: 2px; min-width: 0; font-size: 12px; color: var(--azy-text-1, var(--text)); }
+.azy-te-seed small { font-size: 10.5px; color: var(--azy-text-3, var(--dim)); line-height: 1.35; }
+.azy-te-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(116px, 1fr)); gap: 6px; }
+.azy-te-grid label { display: flex; align-items: center; gap: 8px; padding: 4px 6px; border-radius: 8px; border: 1px solid var(--azy-border-hair, rgba(255, 255, 255, 0.055)); cursor: pointer; font-size: 11.5px; color: var(--azy-text-2, var(--dim)); }
+.azy-te-grid label:hover { border-color: var(--azy-border-strong, rgba(255, 255, 255, 0.15)); color: var(--azy-text-1, var(--text)); }
+.azy-te-grid input[type="color"] { width: 26px; height: 22px; padding: 0; border: 0; border-radius: 6px; background: none; cursor: pointer; flex: none; }
+.azy-te-grid input[type="color"]::-webkit-color-swatch-wrapper { padding: 0; }
+.azy-te-grid input[type="color"]::-webkit-color-swatch { border: 1px solid rgba(255, 255, 255, 0.18); border-radius: 6px; }
+.azy-te-note { margin: 8px 0 0; font-size: 10.5px; color: var(--azy-text-3, var(--faint)); }
+.azy-te-foot { display: flex; justify-content: flex-end; gap: 6px; margin-top: 10px; }
+#czThemeApply { border-color: rgba(var(--hue-rgb), 0.6); background: rgba(var(--hue-rgb), 0.18); color: var(--azy-text-1, var(--text)); }
+#czThemeApply:hover { background: rgba(var(--hue-rgb), 0.28); }
+
+/* ---- Settings › Dagger: pin arrangement (v1.17) — mini wheel + position picker ---------------- */
+#daggerPins .dagger-pins-h { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+#daggerPins .dagger-pins-reset { font-size: 11px; padding: 2px 8px; }
+#daggerPins .dagger-pins-group { display: flex; align-items: flex-start; gap: 12px; }
+#daggerPins .dagger-pins-rows { flex: 1; min-width: 0; }
+#daggerPins .dagger-mini { flex: none; width: 76px; height: 76px; margin-top: 2px; }
+#daggerPins .dagger-mini-slot { fill: rgba(var(--hue-rgb), 0.06); stroke: var(--azy-border-hair, rgba(255, 255, 255, 0.08)); stroke-width: 0.8; transition: fill calc(0.12s * var(--azy-speed-k, 1)) ease; }
+#daggerPins .dagger-mini-slot.on { fill: rgba(var(--hue-rgb), 0.45); stroke: rgba(var(--hue-rgb), 0.8); }
+#daggerPins .dagger-mini-n { font-size: 9px; text-anchor: middle; fill: var(--text-2, currentColor); pointer-events: none; }
+#daggerPins select.dagger-pin-pos { width: 46px; height: 22px; padding: 0 2px 0 6px; min-width: 0; font: inherit; font-size: 11px; color: inherit; background: var(--azy-depth-1, transparent); border: 1px solid var(--azy-border-hair, rgba(255, 255, 255, 0.1)); border-radius: 6px; }
+#daggerPins select.dagger-pin-pos:focus-visible { outline: 1px solid rgba(var(--hue-rgb), 0.8); outline-offset: 1px; }
+#daggerPins .dagger-pin-n { width: auto; }
+
+/* Dagger pins backup + missing pin tag (v1.18) */
+.dagger-pins-io { margin-top: 10px; }
+.dagger-pins-io-row { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.dagger-pins-io-label { font-size: 11px; color: var(--azy-text-2); margin-right: auto; }
+.dagger-pins-import { margin-top: 8px; padding: 9px 11px; border: 1px solid rgba(var(--hue-rgb), 0.3); border-radius: 10px; background: rgba(var(--hue-rgb), 0.05); }
+.dagger-pins-import-h { font-size: 12px; font-weight: 600; color: var(--azy-text-1); margin-bottom: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dagger-pins-import-sum { margin: 0 0 6px; padding-left: 16px; font-size: 11px; color: var(--azy-text-2); line-height: 1.5; }
+.dagger-pins-import-btns { display: flex; gap: 6px; justify-content: flex-end; margin-top: 7px; }
+.dagger-pin.is-missing .dagger-pin-name { color: var(--azy-text-3); }
+.dagger-pin-missing { margin-left: 6px; padding: 0 5px; border-radius: 4px; font-size: 9.5px; font-weight: 600; letter-spacing: 0.02em; color: var(--azy-warn, var(--azy-text-2)); border: 1px solid currentColor; opacity: 0.8; }
+
+/* Sounds card: Pin to Dagger, left of the favourite star (v1.18) */
+.sound-card .wheel-badge.sound-pin {
+  top: 7px; left: auto; right: 37px; width: 26px; height: 26px; z-index: 3;
+  border: 1px solid rgba(var(--hue-rgb), 0.4); background: color-mix(in srgb, var(--azy-depth-1) 72%, transparent); color: var(--azy-text-3);
+}
+.sound-card:hover .wheel-badge.sound-pin, .sound-card .wheel-badge.sound-pin:focus-visible, .sound-card .wheel-badge.sound-pin.on { opacity: 1; }
+.sound-card .wheel-badge.sound-pin.on { color: rgb(var(--hue-rgb)); border-color: rgba(var(--hue-rgb), 0.75); box-shadow: 0 0 calc(10px * var(--azy-glow-k, 1)) -2px rgba(var(--azy-glow-rgb-user, var(--hue-rgb)), calc(0.6 * var(--azy-glow-k, 1))); }
+.sound-card .wheel-badge.sound-pin:hover:not(:disabled) { color: rgb(var(--hue-rgb)); transform: none; scale: 1.08; }
+.sound-card .wheel-badge.sound-pin:disabled { opacity: 0.35; cursor: not-allowed; }
+.sound-card .wheel-badge.sound-pin:focus-visible { outline: 2px solid rgb(var(--hue-rgb)); outline-offset: 2px; }
+.dagger-pins-import-btns .chip:first-child { border-color: rgba(var(--hue-rgb), 0.7); background: rgba(var(--hue-rgb), 0.16); color: var(--azy-text-1); }
+
+
+/* ==========================================================================
+   v1.24 — IRON MAN theme (custom theme id "ironman")
+   Armour red (accent) + arc-reactor gold (selection, glow, edges). Colours only — no structure,
+   no layout, no new panels. Everything is scoped to data-theme-id="ironman", so every other theme
+   (Dark, Dark red, Toolkit, your own) is untouched. The skin's own tokens are re-pointed at gold,
+   which recolours every skinned control at once; the rules below add the HUD details.
+   Glow follows the Glow On/Off dial (--sk-k = 0 when off).
+   ========================================================================== */
+html[data-theme="custom"][data-theme-id="ironman"][data-skin="glow"] {
+  --im-gold-rgb: 242, 176, 30;
+  --sk-ink: color-mix(in srgb, rgb(var(--im-gold-rgb)) 36%, var(--azy-text-2, #bebebe));
+  --sk-edge-faint: rgba(var(--im-gold-rgb), 0.16);
+  --sk-edge-soft: rgba(var(--im-gold-rgb), 0.3);
+  --sk-edge: rgba(var(--im-gold-rgb), 0.52);
+  --sk-edge-hi: rgba(var(--im-gold-rgb), 0.95);
+  --sk-fill: color-mix(in srgb, color-mix(in srgb, rgb(var(--hue-rgb)) 8%, var(--azy-depth-0, #0a0506)) clamp(30%, calc(100% - 18% * var(--azy-glass-k, 1)), 100%), transparent);
+  --sk-lit: linear-gradient(180deg, rgba(var(--hue-rgb), 0.52), rgba(var(--hue-rgb), 0.22) 62%, rgba(var(--im-gold-rgb), 0.2));
+  --sk-lit-soft: linear-gradient(180deg, rgba(var(--hue-rgb), 0.22), rgba(var(--im-gold-rgb), 0.05));
+  --sk-glow: 0 0 calc(12px * var(--sk-k)) calc(-2px * var(--sk-k)) rgba(var(--im-gold-rgb), calc(0.42 * var(--sk-k)));
+  --sk-glow-hi: 0 0 calc(22px * var(--sk-k)) calc(-3px * var(--sk-k)) rgba(var(--im-gold-rgb), calc(0.55 * var(--sk-k))), 0 0 calc(5px * var(--sk-k)) rgba(var(--hue-rgb), calc(0.4 * var(--sk-k)));
+  --sk-inner-hi: inset 0 0 calc(16px * var(--sk-k)) rgba(var(--hue-rgb), calc(0.3 * var(--sk-k)));
+  --sk-text-glow: 0 0 calc(8px * var(--sk-k)) rgba(var(--im-gold-rgb), calc(0.45 * var(--sk-k)));
+}
+/* header: a red → gold → red HUD hairline under the title bar, and a reactor ring round the sigil */
+html[data-theme="custom"][data-theme-id="ironman"][data-skin="glow"] .minimal-ui #app .app-chrome::after {
+  background: linear-gradient(90deg, transparent, rgba(var(--im-gold-rgb), 0.9) 18%, rgba(var(--hue-rgb), 0.95) 50%, rgba(var(--im-gold-rgb), 0.9) 82%, transparent);
+  opacity: 0.7;
+}
+html[data-theme="custom"][data-theme-id="ironman"][data-skin="glow"] .minimal-ui #app .brand-mark {
+  box-shadow: 0 0 0 1px rgba(var(--im-gold-rgb), 0.55), inset 0 0 8px rgba(var(--im-gold-rgb), calc(0.4 * var(--sk-k))), 0 0 calc(14px * var(--sk-k)) calc(-2px * var(--sk-k)) rgba(var(--im-gold-rgb), calc(0.55 * var(--sk-k)));
+}
+/* active tab: red plate with a gold underline */
+html[data-theme="custom"][data-theme-id="ironman"][data-skin="glow"] .minimal-ui #app .mode-pill::after {
+  background: linear-gradient(90deg, transparent, rgb(var(--im-gold-rgb)), transparent); opacity: 1;
+}
+/* hover / selection read as gold; resting surfaces stay dark-red-tinted */
+html[data-theme="custom"][data-theme-id="ironman"][data-skin="glow"] .minimal-ui #app :is(.file-card, .sound-card, .preset-card):is(:hover, :focus-visible, .is-selected, .selected) {
+  border-color: rgba(var(--im-gold-rgb), 0.85);
+}
+html[data-theme="custom"][data-theme-id="ironman"][data-skin="glow"] :is(button, [role="tab"], input, select, a):focus-visible {
+  outline: 2px solid rgba(var(--im-gold-rgb), 0.9); outline-offset: 2px;
+}
+html[data-theme="custom"][data-theme-id="ironman"][data-skin="glow"] ::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, rgba(var(--im-gold-rgb), 0.55), rgba(var(--hue-rgb), 0.55)); border-radius: 6px;
+}
+html[data-theme="custom"][data-theme-id="ironman"][data-skin="glow"] ::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, rgba(var(--im-gold-rgb), 0.85), rgba(var(--hue-rgb), 0.8));
+}
+html[data-theme="custom"][data-theme-id="ironman"][data-skin="glow"] .minimal-ui #app :is(.toast, .snap-dialog, .volume-pop) {
+  border-color: rgba(var(--im-gold-rgb), 0.45);
+}
+/* motion modes: the gold hairline never animates, so nothing to tone down */

@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; connect-src 'none'; object-src 'none'"><title>Azy — Dagger</title><link rel="stylesheet" href="../design-tokens.css"><link rel="stylesheet" href="themes.css"><link rel="stylesheet" href="dagger-action.css">  <link rel="stylesheet" href="palette.css" /><link rel="stylesheet" href="azy-foundation.css" /><link rel="stylesheet" href="azy-skin.css" />
+</head>
+<body class="dagger-action-body"><main>
+<header><span class="brand">AZY / DAGGER</span><span class="hdr-btns"><button id="mini" aria-label="Minimize to a pill" title="Minimize">—</button><button id="close" aria-label="Close">×</button></span></header>
+<div id="waitbox">
+<div id="spinner" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span></div>
+<h1 id="title">Preparing…</h1><p id="name"></p>
+<p id="detail" role="status" aria-live="polite"></p>
+<div class="wait-btns"><button id="cancelWait">Cancel</button><button id="miniWait">Minimize</button></div>
+</div>
+<section id="gain" hidden aria-label="Sound volume">
+<div class="gain-head"><span class="gain-ic" aria-hidden="true"><svg viewBox="0 0 24 24" width="15" height="15"><path d="M4 9.5h3.2L12 5.5v13l-4.8-4H4z" fill="currentColor"/><path d="M15.5 9a4.2 4.2 0 0 1 0 6M18.2 6.5a8 8 0 0 1 0 11" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg></span><span class="gain-titles"><span class="gain-title">Sound volume</span><span id="gainName" class="gain-name"></span></span></div>
+<div class="gain-card">
+<div class="gain-row"><button id="minus" class="gain-step" aria-label="Reduce volume by 5 decibels" title="−5 dB">−5</button><input id="gainRange" class="gain-range" type="range" min="-24" max="12" step="1" value="0" aria-label="Volume in decibels"><button id="plus" class="gain-step" aria-label="Increase volume by 5 decibels" title="+5 dB">+5</button><output id="db" aria-live="polite">0 dB</output></div>
+<div class="gain-scale" aria-hidden="true"><span>−24</span><span class="gain-scale-zero">0 dB</span><span>+12</span></div>
+</div>
+<div class="buttons"><button id="cancel">Cancel</button><button id="apply" class="primary" title="Inserts at the playhead. A level other than 0 dB uses a WAV copy — the original file is never changed.">Apply sound</button></div>
+<p class="hint">Enter applies · Esc closes · arrows ±1 dB</p>
+</section>
+<p id="error" role="alert"></p>
+</main><script src="azy-theme-engine.js"></script><script src="dagger-audio.js"></script><script src="azy-done-sfx.js"></script><script src="dagger-action-renderer.js"></script>  <script src="azy-interactions.js"></script>
+</body></html>
