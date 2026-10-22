@@ -1,0 +1,14 @@
+{
+  "id": "com.premieretoolbox.panel",
+  "name": "Premiere Toolbox",
+  "version": "0.1.0",
+  "main": "index.html",
+  "manifestVersion": 5,
+  "host": { "app": "premierepro", "minVersion": "25.6.0" },
+  "entrypoints": [
+    { "type": "panel", "id": "ptbPanel", "label": { "default": "Premiere Toolbox" },
+      "minimumSize": { "width": 230, "height": 260 }, "maximumSize": { "width": 2000, "height": 2000 },
+      "preferredDockedSize": { "width": 300, "height": 380 }, "preferredFloatingSize": { "width": 320, "height": 420 } }
+  ],
+  "requiredPermissions": { "network": { "domains": ["http://127.0.0.1:47800"] } }
+}
