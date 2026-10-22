@@ -285,6 +285,24 @@ npm run tauri dev  # the real app: needs Rust + the backend items in §4.1
 
 **What was not verified**
 * A pixel-level check in a real Chromium/WebView2 (no browser is available in this environment) —
-  the layout follows the sizes above but should be eyeballed once at 470 × 800 and at the 340 px
-  floor.
+  the layout follows the sizes above but should be eyeballed once at 1080 × 760 and at the 760 px floor
+  (the shell is a wide two-column layout, not the old narrow stack).
 * Anything against a real Premiere project — see §4.1.
+
+---
+
+## 8. Installer + source package — done
+
+| Item | Status |
+| --- | --- |
+| Rust backend restored into `Main APP/src-tauri/src/` (`main.rs`, `captions.rs`, `extras.rs`) | done |
+| New `presets.rs` → registered `preset_list`; `silence_scan` and `write_text` now registered too | done |
+| `tauri.conf.json` for 0.4.0: Azy-sized `main` window + transparent `wheel` window, per-user NSIS, icon/publisher | done |
+| `capabilities/default.json`: `main` + `wheel`, dialog / drag / global-shortcut / window perms | done |
+| `.github/workflows/build.yml`: windows-latest → NSIS `.exe` + `.msi`, artifacts, release on `v*` tag | done — **run 39834417387 green in 5m15s** |
+| `build-installer.ps1` / `build-installer.bat` for a local Windows build | done |
+| `docs/INSTALLER.md` (both build paths, output paths, caveats) | done |
+| Installer actually produced and published | done — release `v0.4.0`, `Premiere.Toolbox_0.4.0_x64-setup.exe` 2 MB + `.msi` 3 MB |
+| Source package | done — `PremiereToolbox-0.4.0-source.zip` (4.5 MB, 269 files) |
+| Signed binary | not done — needs a code-signing certificate; Windows shows "Unknown publisher" |
+| Run the installed app against a real Premiere project | not done — no Windows/Premiere in this environment |
