@@ -1,0 +1,98 @@
+/* =================================================================================================
+ * Azy · design tokens
+ *
+ * Azy's design system, wired to the Toolbox theme. Every colour, radius, glass and font-size still
+ * comes from the existing theme (`--a`, `--bg`, `--panel`, `--radius`, `--txt`, `--blur` …), so a
+ * theme change repaints the whole Azy layout and nothing here hardcodes a palette.
+ * Themes change colours — never structure.
+ * =============================================================================================== */
+
+:root {
+  /* ── surfaces: a ladder built from the theme background ─────────────────────────────────────── */
+  --az-bg-0: var(--bg);
+  --az-bg-1: color-mix(in srgb, var(--bg) 88%, #ffffff 4%);
+  --az-bg-2: color-mix(in srgb, var(--bg) 78%, #ffffff 7%);
+  --az-bg-3: color-mix(in srgb, var(--bg) 68%, #ffffff 10%);
+  --az-card: var(--panel);
+  --az-card-hi: color-mix(in srgb, var(--panel) 82%, #ffffff 8%);
+  --az-glass: color-mix(in srgb, var(--bg) 74%, transparent);
+  --az-pop: color-mix(in srgb, var(--bg) 82%, transparent);
+  --az-raise: color-mix(in srgb, #ffffff 5%, transparent);
+  --az-raise-2: color-mix(in srgb, #ffffff 9%, transparent);
+
+  /* ── type ──────────────────────────────────────────────────────────────────────────────────── */
+  --az-text-1: var(--txt);
+  --az-text-2: var(--dim);
+  --az-text-3: color-mix(in srgb, var(--dim) 62%, transparent);
+  --az-text-4: color-mix(in srgb, var(--dim) 40%, transparent);
+  --az-on-accent: #0a0a0c;
+  --az-danger: #f87171;
+  --az-warn: #f59e0b;
+  --az-ok: #34d399;
+
+  /* ── accent ────────────────────────────────────────────────────────────────────────────────── */
+  --az-accent: var(--a);
+  --az-accent-2: var(--b);
+  --az-accent-soft: color-mix(in srgb, var(--az-accent) 16%, transparent);
+  --az-accent-line: color-mix(in srgb, var(--az-accent) 40%, transparent);
+  --az-accent-glow: color-mix(in srgb, var(--az-accent) 34%, transparent);
+
+  /* ── lines ─────────────────────────────────────────────────────────────────────────────────── */
+  --az-line: var(--line);
+  --az-line-2: var(--line2);
+  --az-hair: color-mix(in srgb, #ffffff 7%, transparent);
+  --az-hair-2: color-mix(in srgb, #ffffff 12%, transparent);
+
+  /* ── radius, following the theme's roundness dial ──────────────────────────────────────────── */
+  --az-r-xs: max(4px, calc(var(--radius) - 2px));
+  --az-r-sm: calc(var(--radius) + 2px);
+  --az-r-md: calc(var(--radius) + 5px);
+  --az-r-lg: calc(var(--radius) + 9px);
+  --az-r-xl: calc(var(--radius) + 13px);
+  --az-r-pill: 999px;
+
+  /* ── spacing ───────────────────────────────────────────────────────────────────────────────── */
+  --az-gap: 8px;
+  --az-pad: 10px;
+
+  /* ── motion (scaled by the animation-speed dial; navigation is exempt) ──────────────────────── */
+  --az-speed-k: 1;
+  --az-dur-1: calc(120ms * var(--az-speed-k));
+  --az-dur-2: calc(160ms * var(--az-speed-k));
+  --az-dur-3: calc(220ms * var(--az-speed-k));
+  --az-ease: cubic-bezier(.3, .7, .3, 1);
+  --az-ease-out: cubic-bezier(.2, .8, .2, 1);
+
+  /* ── blur ──────────────────────────────────────────────────────────────────────────────────── */
+  --az-blur: var(--blur);
+  --az-backdrop: var(--bf);
+
+  /* ── type scale ────────────────────────────────────────────────────────────────────────────── */
+  --az-fs-xs: max(9.5px, calc(var(--fs) - 3px));
+  --az-fs-sm: max(10.5px, calc(var(--fs) - 1.5px));
+  --az-fs-md: var(--fs);
+  --az-fs-lg: calc(var(--fs) + 1.5px);
+  --az-fs-xl: calc(var(--fs) + 4px);
+
+  --az-web-o: 1;
+  --az-web-n: 1;
+  --az-fps: 60;
+}
+
+/* Performance mode trims the expensive effects but never removes function. */
+[data-perf="performance"] {
+  --az-backdrop: none;
+  --az-blur: 0px;
+  --az-card: color-mix(in srgb, var(--bg) 88%, #ffffff 3%);
+  --az-pop: var(--bg);
+}
+[data-perf="balanced"] {
+  --az-backdrop: var(--bf);
+}
+
+/* Reduced motion: the CSS below still finishes every transition, only sooner and without travel. */
+[data-motion="reduced"] {
+  --az-dur-1: 60ms;
+  --az-dur-2: 60ms;
+  --az-dur-3: 80ms;
+}

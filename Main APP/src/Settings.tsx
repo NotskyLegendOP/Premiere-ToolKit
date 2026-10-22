@@ -16,6 +16,8 @@ export const PRESETS: Record<string, Partial<Theme>> = {
   Aurora: { a: "#2dd4bf", b: "#8b5cf6", bg: "#050f0f", panel: "#10201f" },
   Sunset: { a: "#ff7a59", b: "#ff4fa3", bg: "#140a10", panel: "#2a1520" },
   Mono: { a: "#e6e6e6", b: "#9a9a9a", bg: "#0a0a0a", panel: "#1a1a1a" },
+  // the Azy look, offered as a preset so it never overrides a theme you already picked
+  Azy: { a: "#ececf0", b: "#9d9da6", bg: "#060606", panel: "#0e0e0e", radius: 8, glass: 30, blur: 14, amb: 16, border: 9 },
   Tsushima: { a: "#d6304a", b: "#c9b28a", bg: "#0a0d0d", panel: "#151a1a", radius: 6, glass: 0, blur: 0, amb: 10, border: 12 },
   Graphite: { a: "#b8bdc7", b: "#7f8797", bg: "#101113", panel: "#26282c" },
 };
