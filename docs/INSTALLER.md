@@ -8,8 +8,17 @@ Version **0.4.0** (Azy layout). The installer is a normal Tauri 2 Windows bundle
 | MSI (optional) | `Main APP/src-tauri/target/release/bundle/msi/Premiere Toolbox_0.4.0_x64_en-US.msi` |
 | Portable app | `Main APP/src-tauri/target/release/premiere-toolbox.exe` |
 
+## Already built
+
+CI produced the installers for this commit and published them here:
+
+**<https://github.com/NotskyLegendOP/Premiere-ToolKit/releases/tag/v0.4.0>**
+
+- `Premiere.Toolbox_0.4.0_x64-setup.exe` (~2 MB) — recommended
+- `Premiere.Toolbox_0.4.0_x64_en-US.msi` (~3 MB) — for managed installs
+
 The sandbox this repo was assembled in has no Rust toolchain and no Wine, so the `.exe`
-cannot be compiled there. Both supported paths below produce it from the same source.
+was compiled on a GitHub-hosted Windows runner. Both paths below do the same thing.
 
 ---
 
