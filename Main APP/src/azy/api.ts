@@ -236,10 +236,10 @@ export async function importToProject(paths: string[]): Promise<Result> {
 
 /* ── library data ──────────────────────────────────────────────────────────────────────────── */
 
-export async function listPresets(): Promise<PresetItem[]> {
+export async function listPresets(extra: string[] = []): Promise<PresetItem[]> {
   if (!IS_TAURI) { await sleep(180); return PRESETS_DEMO; }
   try {
-    const r = await invoke<string | null>("preset_list");
+    const r = await invoke<string | null>("preset_list", { extra });
     if (!r) return [];
     const arr = JSON.parse(r) as PresetItem[];
     return Array.isArray(arr) ? arr : [];

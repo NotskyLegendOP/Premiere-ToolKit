@@ -34,11 +34,11 @@ export default function Presets({ active, onContext, status }: { active: boolean
   useEffect(() => {
     let alive = true;
     setLoading(true);
-    listPresets()
+    listPresets(pins)
       .then(r => { if (alive) setItems(r); })
       .finally(() => { if (alive) setLoading(false); });
     return () => { alive = false; };
-  }, []);
+  }, [pins]);
 
   const bins = useMemo(() => Array.from(new Set(items.map(i => i.bin))), [items]);
   useEffect(() => { onContext(bin === "__all" ? "All presets" : bin); }, [bin]);

@@ -1,0 +1,71 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "Premiere Toolbox",
+  "version": "0.4.0",
+  "identifier": "com.premieretoolbox.app",
+  "build": {
+    "beforeDevCommand": "npm run dev",
+    "devUrl": "http://localhost:5173",
+    "beforeBuildCommand": "npm run build",
+    "frontendDist": "../dist"
+  },
+  "app": {
+    "windows": [
+      {
+        "label": "main",
+        "title": "Premiere Toolbox",
+        "width": 1080,
+        "height": 760,
+        "minWidth": 760,
+        "minHeight": 560,
+        "resizable": true,
+        "center": true
+      },
+      {
+        "label": "wheel",
+        "url": "index.html#wheel",
+        "title": "Wheel",
+        "width": 620,
+        "height": 620,
+        "decorations": false,
+        "transparent": true,
+        "alwaysOnTop": true,
+        "visible": false,
+        "resizable": false,
+        "skipTaskbar": true,
+        "shadow": false,
+        "center": true
+      }
+    ],
+    "security": {
+      "csp": null,
+      "assetProtocol": {
+        "enable": true,
+        "scope": ["**"]
+      }
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": "all",
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/icon.ico",
+      "icons/icon.png"
+    ],
+    "publisher": "Premiere Toolbox",
+    "copyright": "© 2026 Premiere Toolbox",
+    "category": "Video",
+    "shortDescription": "Premiere Toolbox with the Azy layout",
+    "longDescription": "Premiere Toolbox with the Azy shell: Files, SFX, Presets, Flow, Speed, Snap, Captions, Downloader, Graph and Settings in one window, plus the transparent wheel over Premiere.",
+    "windows": {
+      "nsis": {
+        "installMode": "currentUser",
+        "installerIcon": "icons/icon.ico",
+        "displayLanguageSelector": false,
+        "languages": ["English"]
+      }
+    }
+  }
+}
